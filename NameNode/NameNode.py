@@ -9,11 +9,6 @@ import socket
 
 app = Flask(__name__)
 
-# Usuarios registrados
-registered_peers_file = None
-# Usuarios con sesión iniciada
-logged_peers_file = None
-
 # --- METODOS API REST
 
 # Funciones para cargar el json
@@ -179,6 +174,7 @@ if __name__ == '__main__':
     leader_port = config['NameNode']['leader_port']
     registered_peers_file = config['NameNode']['registered_peers_file']
     logged_peers_file = config['NameNode']['logged_peers_file']
+    archive_url = config['NameNode']['archive_url']
     app.run(host=host, debug=True, port=int(port))
 
 

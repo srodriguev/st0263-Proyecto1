@@ -8,11 +8,6 @@ import json
 
 app = Flask(__name__)
 
-# Ruta de la carpeta donde se almacenan los archivos
-FILES_FOLDER = './files'
-# Ruta de la carpeta del DataNode
-DATANODE_FOLDER = '/path/to/your/datanode/folder'
-
 # Método para obtener el tiempo de ejecución del DataNode
 def uptime():
     return time.time() - app.start_time
@@ -33,9 +28,9 @@ def health_report():
 @app.route('/stockReport', methods=['GET'])
 def stock_report():
     files = {}
-    for root, dirs, filenames in os.walk(os.path.join(DATANODE_FOLDER, FILES_FOLDER)):
+    for root, dirs, filenames in os.walk(files_folder):
         for filename in filenames:
-            filepath = os.path.relpath(os.path.join(root, filename), DATANODE_FOLDER)
+            filepath = os.path.relpath(os.path.join(root, filename), files_folder)
             files[filepath] = os.path.getsize(os.path.join(root, filename))
     return jsonify(files)
 
@@ -47,11 +42,7 @@ def stock_report():
 #create() //añadir un archivo nuevo
 
 
-
-
 # LOOP PRINCIPAL
-
-
 if __name__ == '__main__':
     config = configparser.ConfigParser()
     config.read('config.ini')
@@ -61,4 +52,4 @@ if __name__ == '__main__':
     files_folder = config['DataNode']['files_folder']
     datanode_folder = config['DataNode']['datanode_folder']
     app.start_time = time.time()
-    app.run(debug=True)
+    app.run(host=host, debug=True, port=int(port))
