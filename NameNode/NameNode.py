@@ -9,23 +9,24 @@ import socket
 
 app = Flask(__name__)
 
-REGISTERED_PEERS_FILE = "registered_peers.json"
-LOGGED_PEERS_FILE = "logged_peers.json"
-
+# Usuarios registrados
+registered_peers_file = None
+# Usuarios con sesión iniciada
+logged_peers_file = None
 
 # --- METODOS API REST
 
 # Funciones para cargar el json
 def load_registered_peers():
     try:
-        with open(REGISTERED_PEERS_FILE, 'r') as file:
+        with open(registered_peers_file, 'r') as file:
             return json.load(file)
     except (FileNotFoundError, json.JSONDecodeError):
         return {}
 
 def load_logged_peers():
     try:
-        with open(LOGGED_PEERS_FILE, 'r') as file:
+        with open(logged_peers_file, 'r') as file:
             return json.load(file)
     except (FileNotFoundError, json.JSONDecodeError):
         return {}
@@ -67,7 +68,7 @@ def remove_user():
 
         # Eliminar el usuario asociado a la dirección IP
         del registered_peers[peer_ip]
-        with open(REGISTERED_PEERS_FILE, 'w') as file:
+        with open(registered_peers_file, 'w') as file:
             json.dump(registered_peers, file, indent=4)
 
         return "Usuario eliminado correctamente."
@@ -84,7 +85,7 @@ def login():
         peer_ip = data.get('peer_ip')
         password = data.get('password')
         initial_files = [".git"]
-        if verify_password(REGISTERED_PEERS_FILE, peer_ip, password):
+        if verify_password(registered_peers_file, peer_ip, password):
             logged_peer = {peer_ip: {"files": initial_files}}
             write_logged_peers(logged_peer)
             return "¡Bienvenido!"
@@ -120,7 +121,7 @@ def write_registered_peers(logged_peer):
             registered_peers[peer_name].append([peer_ip])  
         else:
             registered_peers[peer_name] = [peer_ip] 
-    with open(REGISTERED_PEERS_FILE, 'w') as file:
+    with open(registered_peers_file, 'w') as file:
         json.dump(registered_peers, file, indent=4)
 
 def write_logged_peers(logged_peer):
@@ -130,7 +131,7 @@ def write_logged_peers(logged_peer):
             logged_peers[peer_name].append([peer_ip])  
         else:
             logged_peers[peer_name] = [peer_ip] 
-    with open(LOGGED_PEERS_FILE, 'w') as file:
+    with open(logged_peers_file, 'w') as file:
         json.dump(logged_peers, file, indent=4)
 
 def remove_logged_peer(peer_ip):
@@ -140,7 +141,7 @@ def remove_logged_peer(peer_ip):
         if ip == peer_ip:
             del logged_peers[ip]
             break
-    with open(LOGGED_PEERS_FILE, 'w') as file:
+    with open(logged_peers_file, 'w') as file:
         json.dump(logged_peers, file, indent=4)
 
 def get_ip_address():
@@ -170,11 +171,14 @@ def verify_password(json_file, ip_address, password):
 if __name__ == '__main__':
     config = configparser.ConfigParser()
     config.read('config.ini')
-    host = config['config.ini']['ip']
-    port = config['config.ini']['port']
-    is_leader = config['config.ini']['is_leader'].lower() == 'true'
-    leader_ip = config['config.ini']['leader_ip']
-    leader_port = config['config.ini']['leader_port']
+    id = config['NameNode']['name']
+    host = config['NameNode']['ip']
+    port = config['NameNode']['port']
+    is_leader = config['NameNode']['is_leader'].lower() == 'true'
+    leader_ip = config['NameNode']['leader_ip']
+    leader_port = config['NameNode']['leader_port']
+    registered_peers_file = config['NameNode']['registered_peers_file']
+    logged_peers_file = config['NameNode']['logged_peers_file']
     app.run(host=host, debug=True, port=int(port))
 
 

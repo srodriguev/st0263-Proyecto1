@@ -1,0 +1,32 @@
+{
+    "192.168.1.100": [
+        [
+            "usuario_prueba",
+            "$2b$12$Jr1cMIk6K2ebXuqKe/OeF.zNr5iqaVeRH0lbO9mF3blfxFp529o5q"
+        ]
+    ],
+    "192.168.1.101": [
+        [
+            "usuario_prueba",
+            "$2b$12$OdyNuq78.XSJozwMkMRG6eAZiz5C7lhXYhfOhJsRa2zPN5IIvI5GK"
+        ]
+    ],
+    "192.168.1.102": [
+        [
+            "usuario_prueba",
+            "$2b$12$Mto8yhTQ8lPOv6K8mLXCuOhLNtopkrfkXgj5DJJDv9fq0kvk2.8HW"
+        ]
+    ],
+    "192.168.1.104": [
+        [
+            "guagua",
+            "$2b$12$O1GkhuNj.JzT6evpwhPHP.1cq9laznU4Q9JR5TKHLFtRUtO/5L2Me"
+        ]
+    ],
+    "192.168.1.105": [
+        [
+            "cincocinco",
+            "$2b$12$b4DpIoxoS.22dnMkgj2O.OWa.d02j8s6nDp7TkXUb5YVXicrO0Mre"
+        ]
+    ]
+}

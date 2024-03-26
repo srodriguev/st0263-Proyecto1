@@ -1,12 +1,15 @@
+# -*- coding: utf-8 -*-
+
 from flask import Flask, jsonify
 import os
 import time
+import configparser
+import json
 
 app = Flask(__name__)
 
 # Ruta de la carpeta donde se almacenan los archivos
-FILES_FOLDER = 'files'
-
+FILES_FOLDER = './files'
 # Ruta de la carpeta del DataNode
 DATANODE_FOLDER = '/path/to/your/datanode/folder'
 
@@ -39,6 +42,10 @@ def stock_report():
 
 # METODOS GPRC
 
+#read() // leer los archivos que tiene
+
+#create() //añadir un archivo nuevo
+
 
 
 
@@ -46,5 +53,12 @@ def stock_report():
 
 
 if __name__ == '__main__':
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+    id = config['DataNode']['id']
+    host = config['DataNode']['ip']
+    port = config['DataNode']['port']
+    files_folder = config['DataNode']['files_folder']
+    datanode_folder = config['DataNode']['datanode_folder']
     app.start_time = time.time()
     app.run(debug=True)
