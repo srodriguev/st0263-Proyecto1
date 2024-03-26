@@ -36,32 +36,76 @@ def register():
         data = request.json
         username = data.get('username')
         password = hash_password(data.get('password'))
-        peer_ip = data.get('peer_ip') # Esto se podría reemplazar con la función ya implementada get_ip_address, pero como todo corre en local, no lo cambio porque nos queda todo igual
+        peer_ip = data.get('peer_ip')
+        
+        # Cargar los pares IP-usuario existentes
+        registered_peers = load_registered_peers()
+        
+        if peer_ip in registered_peers:
+            return "La dirección IP ya está registrada.", 400
+        
+        # Si la IP no está registrada, agregarla
         registered_peer = {peer_ip: [username, password]}
         write_registered_peers(registered_peer)
+        
         return "¡Registro exitoso!"
-    except:
-        return "Oops, algo salio mal", 401
+    except Exception as e:
+        error_message = f"Oops, algo salió mal con el registro: {str(e)}"
+        return error_message, 401
+
+@app.route('/remove_user', methods=['POST'])
+def remove_user():
+    try:
+        data = request.json
+        peer_ip = data.get('peer_ip')
+
+        # Cargar los pares IP-usuario existentes
+        registered_peers = load_registered_peers()
+
+        if peer_ip not in registered_peers:
+            return "La dirección IP no está registrada.", 400
+
+        # Eliminar el usuario asociado a la dirección IP
+        del registered_peers[peer_ip]
+        with open(REGISTERED_PEERS_FILE, 'w') as file:
+            json.dump(registered_peers, file, indent=4)
+
+        return "Usuario eliminado correctamente."
+    except Exception as e:
+        error_message = f"Oops, algo salió mal al eliminar el usuario: {str(e)}"
+        return error_message, 401
+
+
 
 @app.route('/login', methods=['POST'])
 def login():
-    data = request.json
-    peer_ip = data.get('peer_ip')
-    password = data.get('password')
-    initial_files = [".git"]
-    if verify_password(REGISTERED_PEERS_FILE, peer_ip, password):
-        logged_peer = {peer_ip: {"files": initial_files}}
-        write_logged_peers(logged_peer)
-        return "¡Bienvenido!"
-    else:
-        return "Los datos ingresados no coinciden, intentalo nuevamente.", 401
+    try:
+        data = request.json
+        peer_ip = data.get('peer_ip')
+        password = data.get('password')
+        initial_files = [".git"]
+        if verify_password(REGISTERED_PEERS_FILE, peer_ip, password):
+            logged_peer = {peer_ip: {"files": initial_files}}
+            write_logged_peers(logged_peer)
+            return "¡Bienvenido!"
+        else:
+            return "Los datos ingresados no coinciden, intentalo nuevamente.", 401
+    except Exception as e:
+        error_message = f"Oops, algo salió mal con el inicio de sesión: {str(e)}"
+        return error_message, 500
+
 
 @app.route('/logout', methods=['POST'])
 def logout():
-    data = request.json
-    peer_ip = data.get('peer_ip')
-    remove_logged_peer(peer_ip)
-    return jsonify({"message': f'Logged out peer with IP {peer_ip}"}), 200
+    try:
+        data = request.json
+        peer_ip = data.get('peer_ip')
+        remove_logged_peer(peer_ip)
+        return jsonify({"message": f"Se cerró la sesión del id: {peer_ip}"}), 200
+    except Exception as e:
+        error_message = f"Oops, algo salió mal: {str(e)}"
+        return error_message, 500
+
 
 def hash_password(password):
     salt = bcrypt.gensalt()

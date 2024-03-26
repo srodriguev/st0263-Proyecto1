@@ -1,0 +1,32 @@
+PROYECTO 01:
+
+# COMANDOS FRECUENTES, ARCHIVO CAOTICO, AL FINAL LO ORGANIZAMOS MEJOR EN EL README, POR AHORA IMPORTA QUE SEA UTIL
+
+sudo pip install -r requirements.txt
+
+
+
+
+
+# RECORDERIS DE LOS COMANDOS EN POSTMAN:
+
+BODIES DE PRUEBA EN: 
+REGISTER:
+{
+  "username": "usuario_prueba",
+  "password": "contraseña_prueba",
+  "peer_ip": "192.168.1.100"
+}
+
+LOGIN:
+{
+  "peer_ip": "192.168.1.100",
+  "password": "contraseña_prueba"
+}
+
+LOGOUT:
+{
+  "peer_ip": "192.168.1.100",
+  "password": "contraseña_prueba"
+}
+

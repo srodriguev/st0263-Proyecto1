@@ -1,0 +1,14 @@
+{
+    "192.168.1.100": [
+        [
+            "usuario_prueba",
+            "$2b$12$Jr1cMIk6K2ebXuqKe/OeF.zNr5iqaVeRH0lbO9mF3blfxFp529o5q"
+        ]
+    ],
+    "192.168.1.101": [
+        [
+            "usuario_prueba",
+            "$2b$12$OdyNuq78.XSJozwMkMRG6eAZiz5C7lhXYhfOhJsRa2zPN5IIvI5GK"
+        ]
+    ]
+}
