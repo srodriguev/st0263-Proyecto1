@@ -167,7 +167,7 @@ if __name__ == '__main__':
     config = configparser.ConfigParser()
     config.read('config.ini')
     id = config['NameNode']['name']
-    host = config['NameNode']['ip']
+    ip = config['NameNode']['ip']
     port = config['NameNode']['port']
     is_leader = config['NameNode']['is_leader'].lower() == 'true'
     leader_ip = config['NameNode']['leader_ip']
@@ -175,7 +175,7 @@ if __name__ == '__main__':
     registered_peers_file = config['NameNode']['registered_peers_file']
     logged_peers_file = config['NameNode']['logged_peers_file']
     archive_url = config['NameNode']['archive_url']
-    app.run(host=host, debug=True, port=int(port))
+    app.run(host=ip, debug=True, port=int(port))
 
 
 
