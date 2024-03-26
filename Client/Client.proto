@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+message FileFragment {
+  string name = 1;
+  string url = 2;
+}
+
+service NameNode {
+  rpc Open(FileRequest) returns (FileFragments) {}
+}
+
+service DataNode {
+  rpc ReadFile(FileFragment) returns (stream bytes) {}
+}
+
+message FileRequest {
+  string filename = 1;
+  string mode = 2;
+}
+
+message FileFragments {
+  repeated FileFragment fragments = 1;
+}

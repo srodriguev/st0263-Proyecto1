@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from flask import Flask, request, jsonify
 import json
 import configparser
@@ -6,8 +8,12 @@ import bcrypt
 import socket
 
 app = Flask(__name__)
+
 REGISTERED_PEERS_FILE = "registered_peers.json"
 LOGGED_PEERS_FILE = "logged_peers.json"
+
+
+# --- METODOS API REST
 
 # Funciones para cargar el json
 def load_registered_peers():
@@ -55,7 +61,7 @@ def logout():
     data = request.json
     peer_ip = data.get('peer_ip')
     remove_logged_peer(peer_ip)
-    return jsonify({'message': f'Logged out peer with IP {peer_ip}'}), 200
+    return jsonify({"message': f'Logged out peer with IP {peer_ip}"}), 200
 
 def hash_password(password):
     salt = bcrypt.gensalt()
@@ -112,9 +118,20 @@ def verify_password(json_file, ip_address, password):
     else:
         return False
 
+
+# --- MAIN LOOP
+# IS LEADER = BOOLEANO SI ES UN NAMENODE LIDER O FOLLOWER
+# LEADER_DIR = SI ES FOLLOWER TOMAR LA DIRECCION DEL LIDER DEL CONFIG.INI
+
 if __name__ == '__main__':
     config = configparser.ConfigParser()
     config.read('config.ini')
     host = config['config.ini']['ip']
-    port = config['config.ini']['puerto']
+    port = config['config.ini']['port']
+    is_leader = config['config.ini']['is_leader'].lower() == 'true'
+    leader_ip = config['config.ini']['leader_ip']
+    leader_port = config['config.ini']['leader_port']
     app.run(host=host, debug=True, port=int(port))
+
+
+
