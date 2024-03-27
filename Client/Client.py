@@ -5,26 +5,86 @@ import json
 import configparser
 import bcrypt
 import os
-
-from Helpers.fileSplitter import split_file_into_blocks 
-
+import sys
 import socket
-
 import grpc
 #import file_pb2
 #import file_pb2_grpc
 
+'''
+# Obtiene la ruta del directorio raíz del proyecto
+root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Añade la ruta del directorio Helpers al sys.path
+helpers_dir = os.path.join(root_dir, 'Helpers')
+sys.path.append(helpers_dir)
+
+# Imprime información de depuración
+print("Ruta del directorio raíz:", root_dir)
+print("Ruta del directorio Helpers:", helpers_dir)
+print("sys.path:", sys.path)
+
+# Intenta importar la función split_file_into_blocks desde fileSplitter
+try:
+    from Helpers.fileSplitter import split_file_into_blocks
+except ModuleNotFoundError as e:
+    print("Error al importar fileSplitter:", e)
+'''
+
 app = Flask(__name__)
 
+# --- METODOS DE APOYO / HELPERS
 
-def testSplit(output_directory):
-    # Asegúrate de que el directorio de salida exista
+def split_file_into_blocks(input_file, output_directory):
+    print("Time to divide this file in chunks")
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
 
-    # Llama a la función split_file_into_blocks con el archivo de entrada y el directorio de salida
-    split_file_into_blocks(os.path.join(local_files, "LoremIpsum.txt"), output_directory)
+    # Obtener el nombre del archivo de entrada sin la extensión
+    input_filename_without_extension = os.path.splitext(os.path.basename(input_file))[0]
 
+    # Crear la subcarpeta con el mismo nombre que el archivo de entrada
+    output_subdirectory = os.path.join(output_directory, input_filename_without_extension)
+    if not os.path.exists(output_subdirectory):
+        os.makedirs(output_subdirectory)
+
+    block_size = 4 * 1024  # 4KB
+    with open(input_file, 'rb') as file:
+        block_number = 0
+        while True:
+            block_data = file.read(block_size)
+            if not block_data:
+                break
+            block_filename = os.path.join(output_subdirectory, f"block_{block_number}")
+            with open(block_filename, 'wb') as block_file:
+                block_file.write(block_data)
+            block_number += 1
+
+
+def merge_blocks_into_file(blocks_directory, output_file):
+    print("Time to put back together the chunks")
+    with open(output_file, 'wb') as output:
+        block_number = 0
+        while True:
+            block_filename = os.path.join(blocks_directory, f"block_{block_number}")
+            if not os.path.exists(block_filename):
+                break
+            with open(block_filename, 'rb') as block_file:
+                block_data = block_file.read()
+                output.write(block_data)
+            block_number += 1
+
+
+
+# --- METODOS DE COMUNICACION API REST
+
+
+
+# --- METODOS DE GPRC
+            
+    
+
+# --- LOOP PRINCIPAL
 
 if __name__ == '__main__':
     config = configparser.ConfigParser()
@@ -37,7 +97,9 @@ if __name__ == '__main__':
     block_output = config['Client']['block_output']
 
 
-    testSplit(block_output)
+    #Prueba de cortar y descortar los archivos txt
+    split_file_into_blocks("./local_files/LoremIpsum.txt", block_output)
+    merge_blocks_into_file("./block_output/LoremIpsum", "./downloaded_files/LoremIpsum1.txt")
 
     app.run(host=ip, debug=True, port=int(port))
 
