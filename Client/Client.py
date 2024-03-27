@@ -8,6 +8,8 @@ import os
 import sys
 import socket
 import grpc
+import requests
+import configparser
 #import file_pb2
 #import file_pb2_grpc
 
@@ -78,6 +80,24 @@ def merge_blocks_into_file(blocks_directory, output_file):
 
 # --- METODOS DE COMUNICACION API REST
 
+def register_user(username, password, peer_ip, nn_ip, nn_port):
+    url = f"http://{nn_ip}:{nn_port}/register"
+    data = {
+        "username": username,
+        "password": password,
+        "peer_ip": peer_ip
+    }
+    response = requests.post(url, json=data)
+    return response.text, response.status_code
+
+def login(peer_ip, password, nn_ip, nn_port):
+    url = f"http://{nn_ip}:{nn_port}/login"
+    data = {
+        "peer_ip": peer_ip,
+        "password": password
+    }
+    response = requests.post(url, json=data)
+    return response.text, response.status_code
 
 
 # --- METODOS DE GPRC
@@ -89,6 +109,8 @@ def merge_blocks_into_file(blocks_directory, output_file):
 if __name__ == '__main__':
     config = configparser.ConfigParser()
     config.read('config.ini')
+
+    #config propia
     username = config['Client']['username']
     password = config['Client']['password']
     ip = config['Client']['ip']
@@ -96,10 +118,25 @@ if __name__ == '__main__':
     local_files = config['Client']['local_files']
     block_output = config['Client']['block_output']
 
+    peer_ip = f"{ip}:{port}"
+    print("--- peer_ip is: "+peer_ip)
+
+    #config NameNode
+    nn_ip = config['NameNode']['ip']
+    nn_port = config['NameNode']['port']
+
 
     #Prueba de cortar y descortar los archivos txt
     split_file_into_blocks("./local_files/LoremIpsum.txt", block_output)
     merge_blocks_into_file("./block_output/LoremIpsum", "./downloaded_files/LoremIpsum1.txt")
+
+    # Llama a la función para registrar un usuario
+    registration_result, status_code = register_user(username, password, ip, nn_ip, nn_port)
+    print(f"Registro: {registration_result}, Código de estado: {status_code}")
+
+    # Llama a la función para iniciar sesión
+    login_result, status_code = login(peer_ip, password, nn_ip, nn_port)
+    print(f"Inicio de sesión: {login_result}, Código de estado: {status_code}")
 
     app.run(host=ip, debug=True, port=int(port))
 

@@ -28,5 +28,11 @@
             "cincocinco",
             "$2b$12$b4DpIoxoS.22dnMkgj2O.OWa.d02j8s6nDp7TkXUb5YVXicrO0Mre"
         ]
+    ],
+    "127.0.0.1": [
+        [
+            "user_1",
+            "$2b$12$lp82c00hkowXrqJUeIdkI.SjFTj4S28qk5Fy1Suihf7TTvMSjkoA2"
+        ]
     ]
 }
