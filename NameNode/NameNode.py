@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
-
 from flask import Flask, request, jsonify
 import json
+import requests
 import configparser
 import bcrypt
+import csv
+import time
+import threading
+
 
 import socket
 
@@ -26,6 +30,7 @@ def load_logged_peers():
     except (FileNotFoundError, json.JSONDecodeError):
         return {}
 
+# manejo de usuarios
 @app.route('/register', methods=['POST'])
 def register():
     try:
@@ -71,8 +76,6 @@ def remove_user():
         error_message = f"Oops, algo salió mal al eliminar el usuario: {str(e)}"
         return error_message, 401
 
-
-
 @app.route('/login', methods=['POST'])
 def login():
     try:
@@ -90,7 +93,6 @@ def login():
         error_message = f"Oops, algo salió mal con el inicio de sesión: {str(e)}"
         return error_message, 500
 
-
 @app.route('/logout', methods=['POST'])
 def logout():
     try:
@@ -102,7 +104,7 @@ def logout():
         error_message = f"Oops, algo salió mal: {str(e)}"
         return error_message, 500
 
-
+# helpers
 def hash_password(password):
     salt = bcrypt.gensalt()
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
@@ -158,10 +160,79 @@ def verify_password(json_file, ip_address, password):
     else:
         return False
 
+# helper
+def register_datanode(namenode_address, uptime_seconds):
+    with open(registered_datanodes_file, mode='a', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow([namenode_address, True, uptime_seconds])
+
+@app.route('/registerdatanode', methods=['POST'])
+def register_dn():
+    data = request.get_json()
+
+    # Extraer la información del JSON recibido
+    namenode_address = str(data.get('namenode_address'))  # Convertir a cadena
+    uptime_seconds = data.get('uptime_seconds')
+
+    # Registrar el data node
+    register_datanode(namenode_address, uptime_seconds)
+
+    # Devolver una respuesta JSON
+    response = {
+        'message': 'Data node registrado exitosamente',
+        'namenode_address': namenode_address,
+        'uptime_seconds': uptime_seconds
+    }
+    return jsonify(response), 200
+
+
+def check_datanode_health():
+    while True:
+        # Abrir el archivo CSV de data nodes registrados y leer las direcciones
+        with open(registered_datanodes_file, newline='') as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                address = row['address']
+                try:
+                    # Realizar una solicitud GET a /healthReport en la dirección del data node
+                    response = requests.get(f'http://{address}/healthReport')
+                    if response.status_code == 200:
+                        # Si la solicitud es exitosa, obtener los datos JSON de la respuesta
+                        data = response.json()
+                        # Formatear los datos y guardarlos en el archivo de logs
+                        formatted_data = {
+                            'address': address,
+                            'status': 'online',
+                            'uptime_seconds': data['uptime_seconds']
+                        }
+                        with open(dn_logs, 'a') as logfile:
+                            logfile.write(json.dumps(formatted_data) + '\n')
+                    else:
+                        # Si la solicitud no es exitosa, marcar el data node como no disponible
+                        formatted_data = {
+                            'address': address,
+                            'status': 'unavailable',
+                            'uptime_seconds': None
+                        }
+                        with open(dn_logs, 'a') as logfile:
+                            logfile.write(json.dumps(formatted_data) + '\n')
+                except requests.RequestException:
+                    # Si hay un error al realizar la solicitud, marcar el data node como no disponible
+                    formatted_data = {
+                        'address': address,
+                        'status': 'unavailable',
+                        'uptime_seconds': None
+                    }
+                    with open(dn_logs, 'a') as logfile:
+                        logfile.write(json.dumps(formatted_data) + '\n')
+        # Esperar casi 2 minutos antes de realizar la próxima verificación
+        time.sleep(100)
 
 # --- MAIN LOOP
 # IS LEADER = BOOLEANO SI ES UN NAMENODE LIDER O FOLLOWER
 # LEADER_DIR = SI ES FOLLOWER TOMAR LA DIRECCION DEL LIDER DEL CONFIG.INI
+def run_health_check():
+    threading.Thread(target=check_datanode_health).start()
 
 if __name__ == '__main__':
     #config_path = 'config/config.ini'
@@ -174,10 +245,18 @@ if __name__ == '__main__':
     is_leader = config['NameNode']['is_leader'].lower() == 'true'
     leader_ip = config['NameNode']['leader_ip']
     leader_port = config['NameNode']['leader_port']
-    registered_peers_file = config['NameNode']['registered_peers_file']
-    logged_peers_file = config['NameNode']['logged_peers_file']
+    dn_logs = config['NameNode']['dn_logs']
+    registered_peers_file = config['NameNode']['registered_clients_file']
+    logged_peers_file = config['NameNode']['logged_clients_file']
+    registered_datanodes_file = config['NameNode']['registered_datanodes_file']
+    active_datanodes_file = config['NameNode']['active_datanodes_file']
     archive_url = config['NameNode']['archive_url']
+    
+    # Inicia la verificación de la salud del datanode en un hilo separado
+    run_health_check()
+
     app.run(host=ip, debug=True, port=int(port))
+    
 
 
 
