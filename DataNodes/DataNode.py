@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, send_file
 import os
 import time
 import configparser
@@ -36,20 +36,40 @@ def health_report():
 
 @app.route('/stockReport', methods=['GET'])
 def stock_report():
-    files = {}
+    inventory = []
 
     # Itera sobre los directorios en la carpeta de archivos configurada
     for dirpath, dirnames, filenames in os.walk(files_folder):
         for dirname in dirnames:
-            # Agrega el nombre del directorio (nombre del archivo) al diccionario de archivos
-            files[dirname] = []
+            file_info = {}
+            file_info['file_name'] = dirname
+            file_info['block_names'] = []
 
             # Itera sobre los archivos en el directorio (chunks)
             for chunk_filename in os.listdir(os.path.join(dirpath, dirname)):
-                # Agrega el nombre del archivo (chunk) al diccionario de archivos
-                files[dirname].append(chunk_filename)
+                block_info = {}
+                block_info['block_name'] = chunk_filename
 
-    return jsonify(files)
+                # Obtener el tamaño del bloque
+                block_path = os.path.join(dirpath, dirname, chunk_filename)
+                block_size = os.path.getsize(block_path)
+                block_info['block_size'] = block_size
+
+                file_info['block_names'].append(block_info)
+
+            # Obtener la cantidad de bloques y la fecha de creación
+            file_info['num_blocks'] = len(file_info['block_names'])
+            file_info['creation_date'] = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+
+            inventory.append(file_info)
+
+    # Guardar el inventario en un archivo JSON
+    inventory_path = './inventory/inventory.json'
+    with open(inventory_path, 'w') as f:
+        json.dump(inventory, f, indent=4)
+
+    # Devolver el contenido del JSON junto con el mensaje
+    return send_file("./inventory/inventory.json", as_attachment=True)
 
 
 # METODOS GPRC
@@ -106,7 +126,7 @@ def run_rest_api_server(host, port):
 # LOOP PRINCIPAL
 if __name__ == '__main__':
     config = configparser.ConfigParser()
-    config.read('config.ini')
+    config.read('../config.ini')
     id = config['DataNode']['id']
     host = config['DataNode']['ip']
     port = config['DataNode']['port']

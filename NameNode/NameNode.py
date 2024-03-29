@@ -164,8 +164,10 @@ def verify_password(json_file, ip_address, password):
 # LEADER_DIR = SI ES FOLLOWER TOMAR LA DIRECCION DEL LIDER DEL CONFIG.INI
 
 if __name__ == '__main__':
+    #config_path = 'config/config.ini'
     config = configparser.ConfigParser()
-    config.read('config.ini')
+    #config.read(config_path)
+    config.read('../config.ini')
     id = config['NameNode']['name']
     ip = config['NameNode']['ip']
     port = config['NameNode']['port']

@@ -168,7 +168,7 @@ def upload_block(file_name, block_name):
 
 if __name__ == '__main__':
     config = configparser.ConfigParser()
-    config.read('config.ini')
+    config.read('../config.ini')
 
     #config propia
     username = config['Client']['username']
