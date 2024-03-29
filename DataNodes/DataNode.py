@@ -120,7 +120,7 @@ def run_grpc_server():
 
 def run_rest_api_server(host, port):
     print(f"Starting REST API server on {host}:{port}...")
-    app.run(host=host, debug=True, port=int(port))   
+    app.run(host=host, debug=False, port=int(port))   
 
 # LOOP PRINCIPAL
 if __name__ == '__main__':
@@ -135,16 +135,16 @@ if __name__ == '__main__':
 
     dataNode_dir = f"{host}:{port}"
 
-    #rest_api_thread = threading.Thread(target=run_rest_api_server, args=(host, port))
-    #grpc_thread = threading.Thread(target=run_grpc_server)
+    rest_api_thread = threading.Thread(target=run_rest_api_server, args=(host, port))
+    grpc_thread = threading.Thread(target=run_grpc_server)
     
-    #rest_api_thread.start()
-    #time.sleep(2)  # Asegurarse de que el servidor gRPC se inicie completamente antes de iniciar el servidor REST API
-    #grpc_thread.start()
+    rest_api_thread.start()
+    time.sleep(2)  # Asegurarse de que el servidor gRPC se inicie completamente antes de iniciar el servidor REST API
+    grpc_thread.start()
 
-    #rest_api_thread.join()
-    #grpc_thread.join()
+    rest_api_thread.join()
+    grpc_thread.join()
 
     print("app run")
-    app.run(host=host, debug=True, port=int(port))
+    #app.run(host=host, debug=True, port=int(port))
 

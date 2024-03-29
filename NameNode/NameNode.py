@@ -187,6 +187,7 @@ def register_dn():
 
 
 def check_datanode_health():
+    print("check DN health")
     while True:
         # Abrir el archivo CSV de data nodes registrados y leer las direcciones
         with open(registered_datanodes_file, newline='') as csvfile:
@@ -227,6 +228,7 @@ def check_datanode_health():
                         logfile.write(json.dumps(formatted_data) + '\n')
         # Esperar casi 2 minutos antes de realizar la próxima verificación
         time.sleep(100)
+        print("Slept 1 time more.")
 
 # --- MAIN LOOP
 # IS LEADER = BOOLEANO SI ES UN NAMENODE LIDER O FOLLOWER
@@ -253,7 +255,8 @@ if __name__ == '__main__':
     archive_url = config['NameNode']['archive_url']
     
     # Inicia la verificación de la salud del datanode en un hilo separado
-    run_health_check()
+    #run_health_check()
+    check_datanode_health()
 
     app.run(host=ip, debug=True, port=int(port))
     
