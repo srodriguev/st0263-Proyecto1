@@ -16,7 +16,6 @@ import dataNode_pb2_grpc
 app = Flask(__name__)
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
-files_folder = None
 
 # Método para obtener el tiempo de ejecución del DataNode
 def uptime():
@@ -29,7 +28,7 @@ def health_report():
     uptime_seconds = uptime()
     response = {
         'status': 'online',
-        'address': 'localhost:5000',  # Cambiamos esto si es necesario mediante un configfile
+        'address': dataNode_dir,  # Cambiamos esto si es necesario mediante un configfile
         'uptime_seconds': uptime_seconds
     }
     return jsonify(response)
@@ -133,6 +132,8 @@ if __name__ == '__main__':
     files_folder = config['DataNode']['files_folder']
     datanode_folder = config['DataNode']['datanode_folder']
     app.start_time = time.time()
+
+    dataNode_dir = f"{host}:{port}"
 
     #rest_api_thread = threading.Thread(target=run_rest_api_server, args=(host, port))
     #grpc_thread = threading.Thread(target=run_grpc_server)
