@@ -1,3 +1,3 @@
-address,status,uptime
-192.168.1.100,True,3600
-192.168.1.101,True,3600
+address,status,uptime,total_space,available_space
+127.0.0.1:8000,True,3600,250000,249000
+127.0.0.1:8001,True,3600,250000,249000

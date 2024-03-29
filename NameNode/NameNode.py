@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 import json
 import requests
 import configparser
 import bcrypt
 import csv
 import time
+import os
 import threading
 
 
@@ -14,6 +15,8 @@ import socket
 app = Flask(__name__)
 
 # --- METODOS API REST
+
+# --- FUNCIONES DEL LADO DEL CLIENTE
 
 # Funciones para cargar el json
 def load_registered_peers():
@@ -160,12 +163,85 @@ def verify_password(json_file, ip_address, password):
     else:
         return False
 
-# helper
-def register_datanode(namenode_address, uptime_seconds):
-    with open(registered_datanodes_file, mode='a', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow([namenode_address, True, uptime_seconds])
+# funciones de consulta de archivos
 
+# ver el catalogo    
+@app.route('/inventory', methods=['GET'])
+def get_inventory():
+    catalog_path = os.path.join(archive_url, 'catalog.json')
+    if os.path.exists(catalog_path):
+        return send_file(catalog_path, as_attachment=True)
+    else:
+        return jsonify({'error': 'El archivo catalog.json no existe. Hay un problema.'}), 404
+
+@app.route('/getfile', methods=['GET'])
+def get_file_blocks():
+    # Obtener el nombre del archivo solicitado del parámetro en la solicitud
+    file_requested = request.args.get('file_requested')
+
+    # Comprobar si el archivo inventory.json existe en la ruta especificada
+    inventory_path = os.path.join(archive_url, 'inventory.json')
+    if not os.path.exists(inventory_path):
+        return jsonify({'error': 'El archivo inventory.json no existe'}), 404
+
+    # Leer el archivo inventory.json
+    with open(inventory_path, 'r') as inventory_file:
+        inventory_data = json.load(inventory_file)
+
+    # Buscar el archivo solicitado en el inventario
+    file_blocks = []
+    for datanode in inventory_data['datanodes']:
+        for file_entry in datanode['files']:
+            if file_entry['name'] == file_requested:
+                file_blocks = file_entry['blocks']
+                break
+        if file_blocks:
+            break
+
+    # Verificar si el archivo solicitado está en el inventario
+    if not file_blocks:
+        return jsonify({'error': f'El archivo {file_requested} no está en el inventario'}), 404
+
+    # Construir la respuesta con la lista de bloques y sus URL
+    result = [{'block_name': block['name'], 'block_url': block['url']} for block in file_blocks]
+
+    return jsonify(result), 200
+
+
+
+# --- FUNCIONES DEL LADO DEL DATANODE
+
+# helper para registro de datanode
+def register_datanode(namenode_address, uptime_seconds, total_space, available_space):
+    # Leer todas las entradas existentes del archivo CSV
+    entries = []
+    with open(registered_datanodes_file, mode='r', newline='') as file:
+        reader = csv.reader(file)
+        for row in reader:
+            entries.append(row)
+
+    # Buscar si la dirección ya está registrada
+    address_found = False
+    for entry in entries:
+        if entry[0] == namenode_address:
+            # Reemplazar la entrada existente con los nuevos datos
+            entry[1] = True  # Cambiar el estado a True
+            entry[2] = uptime_seconds
+            entry[3] = total_space
+            entry[4] = available_space
+            address_found = True
+            break
+
+    # Si la dirección no está registrada, agregar una nueva entrada
+    if not address_found:
+        entries.append([namenode_address, True, uptime_seconds, total_space, available_space])
+
+    # Escribir las entradas actualizadas en el archivo CSV
+    with open(registered_datanodes_file, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerows(entries)
+
+#registremos el datanode nuevo 
 @app.route('/registerdatanode', methods=['POST'])
 def register_dn():
     data = request.get_json()
@@ -173,17 +249,22 @@ def register_dn():
     # Extraer la información del JSON recibido
     namenode_address = str(data.get('namenode_address'))  # Convertir a cadena
     uptime_seconds = data.get('uptime_seconds')
+    total_space = data.get('total_space')
+    available_space = data.get('available_space')
 
     # Registrar el data node
-    register_datanode(namenode_address, uptime_seconds)
+    register_datanode(namenode_address, uptime_seconds, total_space, available_space)
 
     # Devolver una respuesta JSON
     response = {
         'message': 'Data node registrado exitosamente',
         'namenode_address': namenode_address,
-        'uptime_seconds': uptime_seconds
+        'uptime_seconds': uptime_seconds,
+        'total_space': total_space,
+        'available_space': available_space
     }
     return jsonify(response), 200
+
 
 
 def check_datanode_health():
@@ -257,8 +338,8 @@ if __name__ == '__main__':
     archive_url = config['NameNode']['archive_url']
     
     # Inicia la verificación de la salud del datanode en un hilo separado
-    #run_health_check()
-    check_datanode_health()
+    run_health_check()
+    #check_datanode_health()
 
     app.run(host=ip, debug=True, port=int(port))
     
