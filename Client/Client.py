@@ -131,9 +131,9 @@ def open_file(file_location, mode, num_blocks, nn_ip, nn_port):
 
 def download_block(file_name, block_name):
     # Establecer conexión con el servidor DataNode
-    with grpc.insecure_channel('localhost:50051') as channel:
+    with grpc.insecure_channel('127.0.0.1:50051') as channel:
         # Crear un cliente gRPC
-        stub = dataNode_pb2_grpc.DataNodeStub(channel)
+        stub = dataNode_pb2_grpc.DataNodeServiceStub(channel)
         # Crear la solicitud de descarga de bloque
         request = dataNode_pb2.DownloadBlockRequest(file_name=file_name, block_name=block_name)
         # Llamar al método remoto
@@ -141,25 +141,26 @@ def download_block(file_name, block_name):
         # Procesar la respuesta
         if response:
             with open(os.path.join('downloads', block_name), 'wb') as file:
-                file.write(response)
+                file.write(response.block_data)
             print(f"Block '{block_name}' downloaded successfully.")
         else:
             print(f"Failed to download block '{block_name}'.")
 
 def upload_block(file_name, block_name):
+    # Leer el contenido del bloque a cargar
+    with open(os.path.join('uploads', block_name), 'rb') as file:
+        block_data = file.read()
     # Establecer conexión con el servidor DataNode
-    with grpc.insecure_channel('localhost:50051') as channel:
+    with grpc.insecure_channel('127.0.0.1:50051') as channel:
         # Crear un cliente gRPC
-        stub = dataNode_pb2_grpc.DataNodeStub(channel)
-        # Leer el contenido del bloque a cargar
-        with open(os.path.join('uploads', block_name), 'rb') as file:
-            block_data = file.read()
+        stub = dataNode_pb2_grpc.DataNodeServiceStub(channel)
         # Crear la solicitud de carga de bloque
         request = dataNode_pb2.UploadBlockRequest(file_name=file_name, block_name=block_name, block_data=block_data)
         # Llamar al método remoto
         response = stub.UploadBlock(request)
         # Procesar la respuesta
-        print(response.message) 
+        print(response.message)
+
        
     
 

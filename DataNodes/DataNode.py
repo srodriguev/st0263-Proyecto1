@@ -5,6 +5,9 @@ import os
 import time
 import configparser
 import json
+from concurrent import futures
+import threading
+
 
 import grpc
 import dataNode_pb2
@@ -52,31 +55,54 @@ def stock_report():
 # METODOS GPRC
 
 # --- gprc logic ---
-# Método para descargar un bloque de archivo
-def download_block(request):
-    file_name = request.file_name
-    block_name = request.block_name
-    file_path = os.path.join(files_folder, file_name, block_name)
-    if not os.path.exists(file_path):
-        return None
-    with open(file_path, "rb") as file:
-        block_data = file.read()
-    return block_data
 
-# Método para cargar un nuevo bloque de archivo
-def upload_block(request):
-    file_name = request.file_name
-    block_name = request.block_name
-    block_data = request.block_data
-    folder_path = os.path.join(files_folder, file_name)
-    if not os.path.exists(folder_path):
-        os.makedirs(folder_path)
-    block_path = os.path.join(folder_path, block_name)
-    with open(block_path, "wb") as file:
-        file.write(block_data)
-    return "Block uploaded successfully"
+# Implementación de los métodos gRPC
+class DataNodeServicer(dataNode_pb2_grpc.DataNodeServicer):
+
+    # Método para descargar un bloque de archivo
+    def download_block(self, request, context):
+        file_name = request.file_name
+        block_name = request.block_name
+        file_path = os.path.join(files_folder, file_name, block_name)
+        if not os.path.exists(file_path):
+            context.set_code(grpc.StatusCode.NOT_FOUND)
+            context.set_details("Block not found")
+            return dataNode_pb2.DownloadBlockResponse()
+        with open(file_path, "rb") as file:
+            block_data = file.read()
+        return dataNode_pb2.DownloadBlockResponse(block_data=block_data)
+
+    # Método para cargar un nuevo bloque de archivo
+    def upload_block(self, request, context):
+        file_name = request.file_name
+        block_name = request.block_name
+        block_data = request.block_data
+        folder_path = os.path.join(files_folder, file_name)
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+        block_path = os.path.join(folder_path, block_name)
+        with open(block_path, "wb") as file:
+            file.write(block_data)
+        return dataNode_pb2.UploadBlockResponse(message="Block uploaded successfully")
+
+# Configuración y ejecución del servidor gRPC
+def serve():
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    dataNode_pb2_grpc.add_DataNodeServiceServicer_to_server(DataNodeServicer(), server)
+    server.add_insecure_port('[::]:50051')
+    server.start()
+    server.wait_for_termination()
 
 # --- main ----
+
+def run_grpc_server():
+    print("Starting gRPC server...")
+    serve()
+
+def run_rest_api_server(host, port):
+    print(f"Starting REST API server on {host}:{port}...")
+    app.run(host=host, debug=True, port=int(port))   
+
 # LOOP PRINCIPAL
 if __name__ == '__main__':
     config = configparser.ConfigParser()
@@ -87,4 +113,17 @@ if __name__ == '__main__':
     files_folder = config['DataNode']['files_folder']
     datanode_folder = config['DataNode']['datanode_folder']
     app.start_time = time.time()
+
+    #rest_api_thread = threading.Thread(target=run_rest_api_server, args=(host, port))
+    #grpc_thread = threading.Thread(target=run_grpc_server)
+    
+    #rest_api_thread.start()
+    #time.sleep(2)  # Asegurarse de que el servidor gRPC se inicie completamente antes de iniciar el servidor REST API
+    #grpc_thread.start()
+
+    #rest_api_thread.join()
+    #grpc_thread.join()
+
+    print("app run")
     app.run(host=host, debug=True, port=int(port))
+

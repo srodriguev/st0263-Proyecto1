@@ -33,3 +33,13 @@ service DataNodeService {
   // Método para cargar un nuevo bloque de archivo
   rpc UploadBlock(UploadBlockRequest) returns (UploadBlockResponse);
 }
+
+// Definición de la clase base para la implementación de los métodos del servicio DataNode
+service DataNodeServicer {
+  // Método para descargar un bloque de archivo
+  rpc DownloadBlock(DownloadBlockRequest) returns (DownloadBlockResponse);
+
+  // Método para cargar un nuevo bloque de archivo
+  rpc UploadBlock(UploadBlockRequest) returns (UploadBlockResponse);
+}
+
