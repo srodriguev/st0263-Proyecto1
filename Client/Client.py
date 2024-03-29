@@ -10,8 +10,11 @@ import socket
 import grpc
 import requests
 import configparser
-#import file_pb2
-#import file_pb2_grpc
+
+import grpc
+import dataNode_pb2
+import dataNode_pb2_grpc
+
 
 '''
 # Obtiene la ruta del directorio raíz del proyecto
@@ -61,6 +64,7 @@ def split_file_into_blocks(input_file, output_directory):
             with open(block_filename, 'wb') as block_file:
                 block_file.write(block_data)
             block_number += 1
+    return block_number
 
 
 def merge_blocks_into_file(blocks_directory, output_file):
@@ -80,28 +84,83 @@ def merge_blocks_into_file(blocks_directory, output_file):
 
 # --- METODOS DE COMUNICACION API REST
 
-def register_user(username, password, peer_ip, nn_ip, nn_port):
+def register_user(username, password, nameNode_dir, nn_ip, nn_port):
     url = f"http://{nn_ip}:{nn_port}/register"
     data = {
         "username": username,
         "password": password,
-        "peer_ip": peer_ip
+        "nameNode_dir": nameNode_dir
     }
     response = requests.post(url, json=data)
     return response.text, response.status_code
 
-def login(peer_ip, password, nn_ip, nn_port):
+def login(nameNode_dir, password, nn_ip, nn_port):
     url = f"http://{nn_ip}:{nn_port}/login"
     data = {
-        "peer_ip": peer_ip,
+        "nameNode_dir": nameNode_dir,
         "password": password
     }
     response = requests.post(url, json=data)
     return response.text, response.status_code
 
+def logout(nameNode_dir, nn_ip, nn_port):
+    url = f"http://{nn_ip}:{nn_port}/logout"
+    data = {
+        "nameNode_dir": nameNode_dir
+    }
+    response = requests.post(url, json=data)
+    return response.json(), response.status_code
+
+
+# --- 
+#mode = w write, r read
+def open_file(file_location, mode, num_blocks, nn_ip, nn_port):
+    if mode == 'w':
+        url = f"http://{nn_ip}:{nn_port}/openfile"
+        data = {
+            "file_location": file_location,
+            "mode": mode,
+            "num_blocks": num_blocks
+        }
+        response = requests.post(url, json=data)
+        return response.json(), response.status_code
+    else:
+        return {"message": "El modo de apertura debe ser 'w' para escritura. a r para lectura"}, 400
 
 # --- METODOS DE GPRC
-            
+
+def download_block(file_name, block_name):
+    # Establecer conexión con el servidor DataNode
+    with grpc.insecure_channel('localhost:50051') as channel:
+        # Crear un cliente gRPC
+        stub = dataNode_pb2_grpc.DataNodeStub(channel)
+        # Crear la solicitud de descarga de bloque
+        request = dataNode_pb2.DownloadBlockRequest(file_name=file_name, block_name=block_name)
+        # Llamar al método remoto
+        response = stub.DownloadBlock(request)
+        # Procesar la respuesta
+        if response:
+            with open(os.path.join('downloads', block_name), 'wb') as file:
+                file.write(response)
+            print(f"Block '{block_name}' downloaded successfully.")
+        else:
+            print(f"Failed to download block '{block_name}'.")
+
+def upload_block(file_name, block_name):
+    # Establecer conexión con el servidor DataNode
+    with grpc.insecure_channel('localhost:50051') as channel:
+        # Crear un cliente gRPC
+        stub = dataNode_pb2_grpc.DataNodeStub(channel)
+        # Leer el contenido del bloque a cargar
+        with open(os.path.join('uploads', block_name), 'rb') as file:
+            block_data = file.read()
+        # Crear la solicitud de carga de bloque
+        request = dataNode_pb2.UploadBlockRequest(file_name=file_name, block_name=block_name, block_data=block_data)
+        # Llamar al método remoto
+        response = stub.UploadBlock(request)
+        # Procesar la respuesta
+        print(response.message) 
+       
     
 
 # --- LOOP PRINCIPAL
@@ -118,8 +177,7 @@ if __name__ == '__main__':
     local_files = config['Client']['local_files']
     block_output = config['Client']['block_output']
 
-    peer_ip = f"{ip}:{port}"
-    print("--- peer_ip is: "+peer_ip)
+    nameNode_dir = f"{ip}:{port}"
 
     #config NameNode
     nn_ip = config['NameNode']['ip']
@@ -127,16 +185,28 @@ if __name__ == '__main__':
 
 
     #Prueba de cortar y descortar los archivos txt
-    split_file_into_blocks("./local_files/LoremIpsum.txt", block_output)
+    num_blocks = split_file_into_blocks("./local_files/LoremIpsum.txt", block_output)
     merge_blocks_into_file("./block_output/LoremIpsum", "./downloaded_files/LoremIpsum1.txt")
 
     # Llama a la función para registrar un usuario
-    registration_result, status_code = register_user(username, password, ip, nn_ip, nn_port)
+    registration_result, status_code = register_user(username, password, nameNode_dir, nn_ip, nn_port)
     print(f"Registro: {registration_result}, Código de estado: {status_code}")
 
     # Llama a la función para iniciar sesión
-    login_result, status_code = login(peer_ip, password, nn_ip, nn_port)
+    login_result, status_code = login(nameNode_dir, password, nn_ip, nn_port)
     print(f"Inicio de sesión: {login_result}, Código de estado: {status_code}")
+
+    # Llama a la función para cerrar la sesión
+    logout_result, status_code = logout(nameNode_dir, nn_ip, nn_port)
+    print(f"Cierre de sesión: {logout_result['message']}, Código de estado: {status_code}")
+
+    print("grpc read test")
+    download_block('example.txt', 'block1')
+    # Llamar al método read_chunk
+
+    print("grpc create test")
+    upload_block('example.txt', 'block2')
+    # Llamar al método create_chunk
 
     app.run(host=ip, debug=True, port=int(port))
 

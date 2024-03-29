@@ -34,5 +34,23 @@
             "user_1",
             "$2b$12$lp82c00hkowXrqJUeIdkI.SjFTj4S28qk5Fy1Suihf7TTvMSjkoA2"
         ]
+    ],
+    "127.0.0.1:5500": [
+        [
+            "user_1",
+            "$2b$12$8kUmhz3XOXyNfQC.wGsODuj/3F9ROa4.rDUJYPfo4G5CjL.cntduG"
+        ]
+    ],
+    "null": [
+        [
+            "user_1",
+            "$2b$12$dylB4esiNdyYw5YNQ6pF9eOz/5iKYnwh8WCgE9FE7BlVTr/FfLJ72"
+        ]
+    ],
+    "null": [
+        [
+            "user_1",
+            "$2b$12$EiVpfu7ClrqXwGbXQ9W/zez3kWeMxKjFe6SB9PHVccXjwuL4QsP6i"
+        ]
     ]
 }
