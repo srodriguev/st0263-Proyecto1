@@ -187,7 +187,6 @@ def register_dn():
 
 
 def check_datanode_health():
-    print("check DN health")
     while True:
         # Abrir el archivo CSV de data nodes registrados y leer las direcciones
         with open(registered_datanodes_file, newline='') as csvfile:
@@ -196,7 +195,8 @@ def check_datanode_health():
                 address = row['address']
                 try:
                     # Realizar una solicitud GET a /healthReport en la dirección del data node
-                    response = requests.get(f'http://{address}/healthReport')
+                    
+                    response = requests.get(f'http://{address}/healthReport', timeout=5)
                     if response.status_code == 200:
                         # Si la solicitud es exitosa, obtener los datos JSON de la respuesta
                         data = response.json()
@@ -226,16 +226,18 @@ def check_datanode_health():
                     }
                     with open(dn_logs, 'a') as logfile:
                         logfile.write(json.dumps(formatted_data) + '\n')
-        # Esperar casi 2 minutos antes de realizar la próxima verificación
-        time.sleep(100)
-        print("Slept 1 time more.")
+        # Esperar 1 minuto antes de realizar la próxima verificación
+        time.sleep(60)
 
 # --- MAIN LOOP
 # IS LEADER = BOOLEANO SI ES UN NAMENODE LIDER O FOLLOWER
 # LEADER_DIR = SI ES FOLLOWER TOMAR LA DIRECCION DEL LIDER DEL CONFIG.INI
+        
+# threads 
 def run_health_check():
     threading.Thread(target=check_datanode_health).start()
 
+# main
 if __name__ == '__main__':
     #config_path = 'config/config.ini'
     config = configparser.ConfigParser()

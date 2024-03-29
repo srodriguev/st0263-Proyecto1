@@ -29,3 +29,7 @@ El resto de la comunicacion es API REST
 # CONFIGS
 
 Puse un config global por fuera para no estar revisando en cual puerto esta corriendo que cosa, se le puede poner que haga override si al ejecutar el comando de inicio se ingresa un ip/puerto diferentes para poder correr por ejemplo varios datanodes en 1 maquina.
+
+# Threading
+
+Para que Flask y gRPC corran a la vez debe estar debug en false, o si no no se pueden mezclar. 
