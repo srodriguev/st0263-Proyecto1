@@ -27,7 +27,8 @@ REGISTER:
   "peer_ip": "192.168.1.100"
 }
 
-LOGIN:
+LOGIN: 
+http://127.0.0.1:5000/login
 {
   "peer_ip": "192.168.1.100",
   "password": "contraseña_prueba"
@@ -39,3 +40,34 @@ LOGOUT:
   "password": "contraseña_prueba"
 }
 
+
+HEALTH REPORT:
+http://127.0.0.1:6000/healthReport
+
+STOCK REPORT:
+http://127.0.0.1:6000/stockReport
+
+
+
+REGISTER DATA NODE:
+http://localhost:5000/registerdatanode
+{
+  "namenode_address": "127.0.0.1:8000",
+  "uptime_seconds": 3600,
+  "total_space": 250000,
+  "available_space" : 249000
+}
+
+INVENTORY:
+http://localhost:5000/inventory
+
+GET FILE BLOCK LOCATION
+http://localhost:5000/getfile?file_requested=example.txt
+
+
+ALLOCATE/CREATE BLOCKS
+http://localhost:5000/allocateblocks
+{
+    "file_name": "example_write_file.txt",
+    "num_blocks": 3
+}

@@ -16,19 +16,33 @@ import dataNode_pb2_grpc
 app = Flask(__name__)
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
+used_capacity = None
 
 # Método para obtener el tiempo de ejecución del DataNode
 def uptime():
     return time.time() - app.start_time
+
+#metodo para ver el peso de los archivos en bytes. 
+def get_folder_size(folder_path):
+    total_size = 0
+    for dirpath, dirnames, filenames in os.walk(folder_path):
+        for filename in filenames:
+            file_path = os.path.join(dirpath, filename)
+            total_size += os.path.getsize(file_path)
+    return total_size
 
 # METODOS API REST
 
 @app.route('/healthReport', methods=['GET'])
 def health_report():
     uptime_seconds = uptime()
+    used_space_now = get_folder_size(files_folder) # en bytes
+    available_space = capacity - used_space_now
     response = {
         'status': 'online',
         'address': dataNode_dir,  # Cambiamos esto si es necesario mediante un configfile
+        'capacity': capacity,
+        'available_capacity': available_space,
         'uptime_seconds': uptime_seconds
     }
     return jsonify(response)
@@ -131,6 +145,7 @@ if __name__ == '__main__':
     port = config['DataNode']['port']
     files_folder = config['DataNode']['files_folder']
     datanode_folder = config['DataNode']['datanode_folder']
+    capacity = config['DataNode']['capacity']
     app.start_time = time.time()
 
     dataNode_dir = f"{host}:{port}"

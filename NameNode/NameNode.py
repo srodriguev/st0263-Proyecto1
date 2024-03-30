@@ -164,6 +164,8 @@ def verify_password(json_file, ip_address, password):
         return False
 
 # funciones de consulta de archivos
+    
+# LEER
 
 # ver el catalogo    
 @app.route('/inventory', methods=['GET'])
@@ -174,6 +176,7 @@ def get_inventory():
     else:
         return jsonify({'error': 'El archivo catalog.json no existe. Hay un problema.'}), 404
 
+# buscar en que nodos esta un archivo del catalogo
 @app.route('/getfile', methods=['GET'])
 def get_file_blocks():
     # Obtener el nombre del archivo solicitado del parámetro en la solicitud
@@ -206,6 +209,69 @@ def get_file_blocks():
     result = [{'block_name': block['name'], 'block_url': block['url']} for block in file_blocks]
 
     return jsonify(result), 200
+
+
+# ESCRIBIR
+
+@app.route('/allocateblocks', methods=['POST'])
+def allocate_blocks():
+    data = request.get_json()
+
+    # Extraer la información del JSON recibido
+    file_name = data.get('file_name')
+    num_blocks = data.get('num_blocks')
+
+    # Verificar si el archivo inventory.json existe en la ruta especificada
+    inventory_path = os.path.join(archive_url, 'inventory.json')
+    if not os.path.exists(inventory_path):
+        return jsonify({'error': 'El archivo inventory.json no existe'}), 404
+
+    # Leer el archivo inventory.json
+    with open(inventory_path, 'r') as inventory_file:
+        inventory_data = json.load(inventory_file)
+
+    # Verificar si el archivo ya está en el inventario
+    for datanode in inventory_data['datanodes']:
+        for file_data in datanode['files']:
+            if file_data['name'] == file_name:
+                print("el archivo ya estaba registrado")
+                return jsonify({'error': f'El archivo {file_name} ya está en el inventario'}), 400
+
+    # Obtener la lista de nodos de datos disponibles y ordenarlos por espacio disponible de menor a mayor
+    available_datanodes = sorted(get_available_datanodes(inventory_data), key=lambda x: x['available_space'])
+
+    print(available_datanodes)
+    print(num_blocks)
+    # Verificar si hay suficientes nodos de datos disponibles para almacenar todos los bloques
+    if len(available_datanodes) < num_blocks:
+        return jsonify({'error': 'No hay suficientes nodos de datos disponibles para almacenar todos los bloques'}), 400
+
+    # Lista para almacenar las asignaciones de bloques
+    block_assignments = []
+
+    # Iterar sobre cada bloque que debe ser almacenado
+    for i in range(1, num_blocks + 1):
+        block_name = f"block{i}"
+
+        # Almacenar cada bloque en dos nodos de datos diferentes
+        for j in range(2):
+            datanode = available_datanodes[j]
+            block_url = f"http://{datanode['address']}/files/{file_name}/{block_name}"
+            block_assignments.append({'block_name': block_name, 'block_url': block_url, 'assigned_datanode': datanode['address']})
+
+    return jsonify(block_assignments), 200
+
+
+def get_available_datanodes(inventory_data):
+    available_datanodes = []
+    for datanode in inventory_data['datanodes']:
+        if datanode['status'] == 'online':
+            total_space = datanode['total_space']
+            available_space = datanode['available_space']
+            # Si hay suficiente espacio disponible, añadir el nodo de datos a la lista
+            if available_space >= total_space * 0.2:  # Solo considerar nodos con al menos el 20% de su espacio disponible
+                available_datanodes.append(datanode)
+    return available_datanodes
 
 
 
