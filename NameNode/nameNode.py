@@ -331,8 +331,6 @@ def register_dn():
     }
     return jsonify(response), 200
 
-
-
 def check_datanode_health():
     while True:
         # Abrir el archivo CSV de data nodes registrados y leer las direcciones
@@ -343,7 +341,7 @@ def check_datanode_health():
                 try:
                     # Realizar una solicitud GET a /healthReport en la dirección del data node
                     
-                    response = requests.get(f'http://{address}/healthReport', timeout=5)
+                    response = requests.get(f'http://{address}/healthReport', timeout=timer_healthResponse)
                     if response.status_code == 200:
                         # Si la solicitud es exitosa, obtener los datos JSON de la respuesta
                         data = response.json()
@@ -351,8 +349,15 @@ def check_datanode_health():
                         formatted_data = {
                             'address': address,
                             'status': 'online',
-                            'uptime_seconds': data['uptime_seconds']
+                            'uptime_seconds': data['uptime_seconds'],
+                            'capacity': data['capacity'],
+                            'available_capacity':data['available_capacity']
                         }
+
+                        print("update space definition in inventory: ")
+                        inventory_file_path = os.path.join(archive_url, 'inventory.json')
+                        update_inventory_capacity(address, data['available_capacity'], data['capacity'], inventory_file_path)
+
                         with open(dn_logs, 'a') as logfile:
                             logfile.write(json.dumps(formatted_data) + '\n')
                     else:
@@ -374,7 +379,31 @@ def check_datanode_health():
                     with open(dn_logs, 'a') as logfile:
                         logfile.write(json.dumps(formatted_data) + '\n')
         # Esperar 1 minuto antes de realizar la próxima verificación
-        time.sleep(60)
+        time.sleep(timer_healthRequest)
+
+def update_inventory_capacity(address, available_capacity, capacity, inventory_file_path):
+    # Leer el archivo de inventario JSON
+    with open(inventory_file_path, 'r') as inventory_file:
+        inventory_data = json.load(inventory_file)
+    
+    # Buscar el nodo de datos con la dirección especificada
+    for datanode in inventory_data['datanodes']:
+        if datanode['address'] == address:
+            # Actualizar los valores de capacidad
+            datanode['space']['available_space'] = available_capacity
+            datanode['space']['capacity'] = capacity
+            break
+    
+    # Escribir los datos actualizados de inventario de nuevo al archivo JSON
+    with open(inventory_file_path, 'w') as inventory_file:
+        json.dump(inventory_data, inventory_file, indent=4)
+
+
+# --- METODOS CON EL NAME NODE (LEADER Y FOLLOWER)
+        
+def nameNodeHealthReport():
+    print("Health report de follower al leader. Si falla: failback y failover")
+    print("un if (si soy follower o leader)")
 
 # --- MAIN LOOP
 # IS LEADER = BOOLEANO SI ES UN NAMENODE LIDER O FOLLOWER
@@ -402,6 +431,8 @@ if __name__ == '__main__':
     registered_datanodes_file = config['NameNode']['registered_datanodes_file']
     active_datanodes_file = config['NameNode']['active_datanodes_file']
     archive_url = config['NameNode']['archive_url']
+    timer_healthResponse = float(config['NameNode']['timer_healthResponse'])
+    timer_healthRequest = float(config['NameNode']['timer_healthRequest'])
     
     # Inicia la verificación de la salud del datanode en un hilo separado
     run_health_check()

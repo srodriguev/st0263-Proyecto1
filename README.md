@@ -42,3 +42,15 @@ Para que Flask y gRPC corran a la vez debe estar debug en false, o si no no se p
 Por ahora no esta checkeando el login, pero antes de hacer una consulta en el archivo final debo verificar que desde la ip que se hace la consulta de inventario o getfile sea una ip en logged_peers.json
 
 Ya tiene los metodos de consulta y de agregar archivos, le devuelve en que 2 nodos debe guardar cada chunk y es trabajo del cliente guardar cada chunk 2 veces. 
+
+
+# Decisiones de diseño
+
+Por ahora cuando se inscribe el dataNode de manera inicial se guarda en el csv de registered_datanodes el espacio total y el disponible por si por algun motivo hay menos espacio disponible alla. 
+
+Pero ese dato no se actualiza y se puede usar para comparar si alguna discrepancia, el espacio disponible actual solo se mantiene actualizado en el inventory.json
+
+Podria ser mas eficiente, si, pero por ahora esta asi.
+
+
+!!! Falta verificar si se esta actualizando bien el nuevo espacio disponible en cada nodo con el checkHealthReport!!!

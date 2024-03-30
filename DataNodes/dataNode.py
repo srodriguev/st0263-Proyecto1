@@ -37,7 +37,8 @@ def get_folder_size(folder_path):
 def health_report():
     uptime_seconds = uptime()
     used_space_now = get_folder_size(files_folder) # en bytes
-    available_space = capacity - used_space_now
+    available_space = float(capacity) - used_space_now
+    print("Used space:", used_space_now, "bytes. Available space:", available_space, "bytes.")
     response = {
         'status': 'online',
         'address': dataNode_dir,  # Cambiamos esto si es necesario mediante un configfile
@@ -150,16 +151,16 @@ if __name__ == '__main__':
 
     dataNode_dir = f"{host}:{port}"
 
-    rest_api_thread = threading.Thread(target=run_rest_api_server, args=(host, port))
-    grpc_thread = threading.Thread(target=run_grpc_server)
+    #rest_api_thread = threading.Thread(target=run_rest_api_server, args=(host, port))
+    #grpc_thread = threading.Thread(target=run_grpc_server)
     
-    rest_api_thread.start()
-    time.sleep(2)  # Asegurarse de que el servidor gRPC se inicie completamente antes de iniciar el servidor REST API
-    grpc_thread.start()
+    #rest_api_thread.start()
+    #time.sleep(2)  # Asegurarse de que el servidor gRPC se inicie completamente antes de iniciar el servidor REST API
+    #grpc_thread.start()
 
-    rest_api_thread.join()
-    grpc_thread.join()
+    #rest_api_thread.join()
+    #grpc_thread.join()
 
     print("app run")
-    #app.run(host=host, debug=True, port=int(port))
+    app.run(host=host, debug=True, port=int(port))
 
