@@ -1,3 +1,0 @@
-address,status,uptime,total_space,available_space
-127.0.0.1:8000,True,3600,250000,249000
-127.0.0.1:8001,True,3600,250000,249000
