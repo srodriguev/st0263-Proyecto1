@@ -84,48 +84,87 @@ def merge_blocks_into_file(blocks_directory, output_file):
 
 # --- METODOS DE COMUNICACION API REST
 
-def register_user(username, password, nameNode_dir, nn_ip, nn_port):
+def register_user(username, password, client_dir, nn_ip, nn_port):
     url = f"http://{nn_ip}:{nn_port}/register"
     data = {
         "username": username,
         "password": password,
-        "nameNode_dir": nameNode_dir
+        "peer_ip": client_dir
     }
     response = requests.post(url, json=data)
     return response.text, response.status_code
 
-def login(nameNode_dir, password, nn_ip, nn_port):
+def login(username, password, nn_ip, nn_port):
     url = f"http://{nn_ip}:{nn_port}/login"
     data = {
-        "nameNode_dir": nameNode_dir,
+        "username": username,
+        "peer_ip": client_dir,
         "password": password
     }
     response = requests.post(url, json=data)
     return response.text, response.status_code
 
-def logout(nameNode_dir, nn_ip, nn_port):
+def logout(client_dir, nn_ip, nn_port):
     url = f"http://{nn_ip}:{nn_port}/logout"
     data = {
-        "nameNode_dir": nameNode_dir
+        "peer_ip": client_dir
     }
     response = requests.post(url, json=data)
     return response.json(), response.status_code
 
 
 # --- 
-#mode = w write, r read
-def open_file(file_location, mode, num_blocks, nn_ip, nn_port):
-    if mode == 'w':
-        url = f"http://{nn_ip}:{nn_port}/openfile"
-        data = {
-            "file_location": file_location,
-            "mode": mode,
-            "num_blocks": num_blocks
-        }
-        response = requests.post(url, json=data)
-        return response.json(), response.status_code
+# METODOS DE LECTURA DE ARCHIVOS
+
+# Método para solicitar el catálogo de archivos
+def request_catalog():
+    url = f'http://{nameNode_dir}/inventory'
+    response = requests.get(url)
+    if response.status_code == 200:
+        with open('./catalog/catalog.json', 'wb') as f:
+            f.write(response.content)
+        print("Catálogo descargado exitosamente.")
+        print(response.content)
     else:
-        return {"message": "El modo de apertura debe ser 'w' para escritura. a r para lectura"}, 400
+        print("Error al descargar el catálogo:", response.text)
+
+# Método para solicitar un archivo específico
+def request_file(file_name):
+    url = f'http://{nameNode_dir}/getfile?file_requested={file_name}'
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        print("Bloques del archivo solicitado:")
+        for block in data:
+            print(f"Nombre del bloque: {block['block_name']}, URL del bloque: {block['block_url']}")
+    else:
+        print("Error al obtener los bloques del archivo:", response.text)
+
+
+# METODOS DE ESCRITURA DE ARCHIVOS
+        
+# Método para enviar la solicitud de asignación de bloques al servidor principal
+def write_file(file_name, num_blocks):
+    # Construir el JSON con los datos del archivo y el número de bloques
+    data = {
+        "file_name": file_name,
+        "num_blocks": num_blocks
+    }
+
+    # URL del servidor principal
+    url = f'http://{nameNode_dir}/allocateblocks'
+
+    # Realizar la solicitud POST al servidor principal con los datos JSON
+    response = requests.post(url, json=data)
+
+    # Verificar la respuesta del servidor
+    if response.status_code == 200:
+        block_assignments = response.json()
+        print("Asignaciones de bloques recibidas:")
+        for block in block_assignments:
+            print(f"Nombre del bloque: {block['block_name']}, URL del bloque: {block['block_url']}, DataNode asignado: {block['assigned_datanode']}")
+    else:
+        print("Error al obtener las asignaciones de bloques:", response.text)
 
 # --- METODOS DE GPRC
 
@@ -178,11 +217,13 @@ if __name__ == '__main__':
     local_files = config['Client']['local_files']
     block_output = config['Client']['block_output']
 
-    nameNode_dir = f"{ip}:{port}"
+    client_dir = f"{ip}:{port}"
 
     #config NameNode
     nn_ip = config['NameNode']['ip']
     nn_port = config['NameNode']['port']
+
+    nameNode_dir = f"{nn_ip}:{nn_port}"
 
 
     #Prueba de cortar y descortar los archivos txt
@@ -190,25 +231,33 @@ if __name__ == '__main__':
     merge_blocks_into_file("./block_output/LoremIpsum", "./downloaded_files/LoremIpsum1.txt")
 
     # Llama a la función para registrar un usuario
-    registration_result, status_code = register_user(username, password, nameNode_dir, nn_ip, nn_port)
+    registration_result, status_code = register_user(username, password, client_dir, nn_ip, nn_port)
     print(f"Registro: {registration_result}, Código de estado: {status_code}")
 
     # Llama a la función para iniciar sesión
-    login_result, status_code = login(nameNode_dir, password, nn_ip, nn_port)
+    login_result, status_code = login(username, password, nn_ip, nn_port)
     print(f"Inicio de sesión: {login_result}, Código de estado: {status_code}")
 
     # Llama a la función para cerrar la sesión
-    logout_result, status_code = logout(nameNode_dir, nn_ip, nn_port)
-    print(f"Cierre de sesión: {logout_result['message']}, Código de estado: {status_code}")
+    #logout_result, status_code = logout(nameNode_dir, nn_ip, nn_port)
+    #print(f"Cierre de sesión: {logout_result['message']}, Código de estado: {status_code}")
 
-    print("grpc read test")
-    download_block('example.txt', 'block1')
+    # Solicitar el catálogo
+    request_catalog()
+
+    # Solicitar información sobre un archivo específico (reemplaza 'nombre_del_archivo' con el nombre real del archivo)
+    request_file('loremIpsum.txt')
+
+    # ---
+    #test de escritura
+    #write_file("test_file_99.txt", num_blocks)
+    #print("grpc read test")
+    #download_block('example.txt', 'block1')
     # Llamar al método read_chunk
-
-    print("grpc create test")
-    upload_block('example.txt', 'block2')
+    #print("grpc create test")
+    #upload_block('example.txt', 'block2')
     # Llamar al método create_chunk
 
-    app.run(host=ip, debug=True, port=int(port))
+    #app.run(host=ip, debug=True, port=int(port))
 
 

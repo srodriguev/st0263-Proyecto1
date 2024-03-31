@@ -1,0 +1,20 @@
+{
+    "null": [
+        [
+            "user_1",
+            "$2b$12$JFxMXJvRm3lTsjpklucK8el6hIv0VB7N/bqQSkSXxOK4.Fzrg0WpW"
+        ]
+    ],
+    "192.168.1.105": [
+        [
+            "cincocinco",
+            "$2b$12$EuJDKNWkY7KrUO0LHYo/Q.oYy5C3tVtcc4Z38lyrigofLGESpAuhS"
+        ]
+    ],
+    "127.0.0.1:5500": [
+        [
+            "user_1",
+            "$2b$12$HJBrNP6S8.yyhXYPllvz/Ox0lLcg5Z1CdL0FlUV0mdNJZNswCWUyi"
+        ]
+    ]
+}
