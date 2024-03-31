@@ -14,6 +14,7 @@ Proyecto 1 - st0263 - Topicos de telematica
 - Login de usuarios.
 - Logout de usuarios.
 - Leer del config los datos de Cliente y otros nodos.
+- Metodos que le envian los request al DataNode del catalogo y la ubicacion de un archivo.
 
 **DataNode:**
 - Se ve el peso de los archivos (espacio ocupada) en bytes
@@ -51,7 +52,6 @@ Proyecto 1 - st0263 - Topicos de telematica
 **Client:**
 - mover los helpers a su propio archivo python para que se puedan reutilizar y por orden, corregir errores de importacion. 
 - Metodos Download y Upload de gRPC con el dataNode.
-- Metodos que le envian los request al DataNode del catalogo y la ubicacion de un archivo.
 - Forma de interactuar con el programa en vivo (loop principal de acciones o UI)
 
 **DataNode:**
