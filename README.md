@@ -1,6 +1,70 @@
 # st0263-Proyecto1
 Proyecto 1 - st0263 - Topicos de telematica
 
+# FUNCIONALIDADES YA IMPLEMENTADAS
+
+**General**
+- Se tiene un config global para tener coherencia entre los elementos
+- carpetas para guardar cada parte del proceso ordenadamente.
+
+**Client:**
+- Se corta el archivo en bloques.
+- Se reconstruye el archivo desde los bloques.
+- Registro de usuarios.
+- Login de usuarios.
+- Logout de usuarios.
+- Leer del config los datos de Cliente y otros nodos.
+
+**DataNode:**
+- Se ve el peso de los archivos (espacio ocupada) en bytes
+- Se mode el tiempo que lleva vivo el nodo (uptime)
+- Puede enviar reportes de salud API Rest
+- Puede enviar reportes de Stock API Rest (iventario)
+- Se configura con el config file
+
+**Namenode (Servidor ppal):**
+- Contesta el login
+- Contesta el register
+- Contesta el remove user (sin probar)
+- Contesta el logout
+- Hash de contraseñas
+- Escribe los clientes registrados en un JSON
+- Escribe los clientes en linea en un JSON
+- Elimina los clientes registrados en un JSON
+- Elimina los clientes en linea en un JSON
+- Verifica contraseñas (para login)
+- Devuelve un catalogo de archivos (get API Rest con el cliente)
+- Devuelve la localizacion de los bloques segun un nombre de archivo (getAPI Rest con cliente)
+- Decide donde guardar un archivo nuevo segun el espacio disponible en cada dataNode
+- Calcula el espacio disponible en cada dataNode segun la info del inventario.
+- Registra un datanode para agregarlo al sistema (api Rest)
+- Manda request de health report a todos los DataNode a ver si siguen vivos y lo guarda todo en un log.
+- Se actualiza la capacidad del inventario segun la info del health report (sin probar aun)
+- Se configura con el config file
+
+# FUNCIONALIDADES POR IMPLEMENTAR
+
+**En general:**
+- Se han probado los modulos por separado pero no todo el procedimiento de inicio a fin.
+- No se ha probado el manejo de errores en algunos modulos
+
+**Client:**
+- mover los helpers a su propio archivo python para que se puedan reutilizar y por orden, corregir errores de importacion. 
+- Metodos Download y Upload de gRPC con el dataNode.
+- Metodos que le envian los request al DataNode del catalogo y la ubicacion de un archivo.
+- Forma de interactuar con el programa en vivo (loop principal de acciones o UI)
+
+**DataNode:**
+- Deberia guardar el hash de cada bloque en algun lado para luego compararlo al enviar el reporte de stock y ver si algun archivo se ha perdido, dañado o corrompido.
+- Metodos Download y Upload de gRPC con el cliente.
+
+**NameNode:**
+- Config manual para el secundario
+- Diferenciar el ppal y el secundario
+- Fallback del principal al secundario si se muere el otro: avisar a los demas integrantes y que actualicen la IP del namenode pa' los requests. 
+- Failover por si el ppal revive
+- Si un dataNode se murió (se entera cuando realiza el health report) repartir los bloques que ese deberia tener entre los demas namenodes, actuando como un minicliente o delegandoselo.
+
 
 # GRPC METHODS
 
