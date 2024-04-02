@@ -107,6 +107,11 @@ Por ahora no esta checkeando el login, pero antes de hacer una consulta en el ar
 
 Ya tiene los metodos de consulta y de agregar archivos, le devuelve en que 2 nodos debe guardar cada chunk y es trabajo del cliente guardar cada chunk 2 veces. 
 
+Correrlo con parametros custom o como follower. 
+
+```python
+python namenode.py --host 192.168.1.100 --port 8080 --is_leader False
+```
 
 # Decisiones de diseño
 

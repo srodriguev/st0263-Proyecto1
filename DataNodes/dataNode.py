@@ -37,13 +37,13 @@ def get_folder_size(folder_path):
 def health_report():
     uptime_seconds = uptime()
     used_space_now = get_folder_size(files_folder) # en bytes
-    available_space = float(capacity) - used_space_now
-    print("Used space:", used_space_now, "bytes. Available space:", available_space, "bytes.")
+    available_capacity = float(capacity) - used_space_now
+    print("Used space:", used_space_now, "bytes. Available space:", available_capacity, "bytes.")
     response = {
         'status': 'online',
         'address': dataNode_dir,  # Cambiamos esto si es necesario mediante un configfile
         'capacity': capacity,
-        'available_capacity': available_space,
+        'available_capacity': available_capacity,
         'uptime_seconds': uptime_seconds
     }
     return jsonify(response)
@@ -147,6 +147,7 @@ if __name__ == '__main__':
     files_folder = config['DataNode']['files_folder']
     datanode_folder = config['DataNode']['datanode_folder']
     capacity = config['DataNode']['capacity']
+    available_capacity = config['DataNode']['available_capacity']
     app.start_time = time.time()
 
     dataNode_dir = f"{host}:{port}"

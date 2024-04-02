@@ -16,5 +16,11 @@
             "user_1",
             "$2b$12$HJBrNP6S8.yyhXYPllvz/Ox0lLcg5Z1CdL0FlUV0mdNJZNswCWUyi"
         ]
+    ],
+    "192.168.1.104": [
+        [
+            "MAYONESA",
+            "$2b$12$te.N3DkrVqiXSy8H4C70jeEXWpuod54gwYEh/Hf2fI6tmu17qXv9C"
+        ]
     ]
 }

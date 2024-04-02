@@ -8,6 +8,7 @@ import csv
 import time
 import os
 import threading
+import argparse
 
 
 import socket
@@ -85,7 +86,7 @@ def login():
         data = request.json
         peer_ip = data.get('peer_ip')
         password = data.get('password')
-        initial_files = [".git"]
+        initial_files = ["init.git"]
         if verify_password(registered_peers_file, peer_ip, password):
             logged_peer = {peer_ip: {"files": initial_files}}
             write_logged_peers(logged_peer)
@@ -213,6 +214,7 @@ def get_file_blocks():
 
 # ESCRIBIR
 
+# recibimos el request y designamos el espacio para los bloques
 @app.route('/allocateblocks', methods=['POST'])
 def allocate_blocks():
     data = request.get_json()
@@ -331,6 +333,7 @@ def register_dn():
     }
     return jsonify(response), 200
 
+# reporte de salud a cada DataNode
 def check_datanode_health():
     while True:
         # Abrir el archivo CSV de data nodes registrados y leer las direcciones
@@ -340,7 +343,6 @@ def check_datanode_health():
                 address = row['address']
                 try:
                     # Realizar una solicitud GET a /healthReport en la dirección del data node
-                    
                     response = requests.get(f'http://{address}/healthReport', timeout=timer_healthResponse)
                     if response.status_code == 200:
                         # Si la solicitud es exitosa, obtener los datos JSON de la respuesta
@@ -369,6 +371,7 @@ def check_datanode_health():
                         }
                         with open(dn_logs, 'a') as logfile:
                             logfile.write(json.dumps(formatted_data) + '\n')
+                        reallocate_blocks(address)
                 except requests.RequestException:
                     # Si hay un error al realizar la solicitud, marcar el data node como no disponible
                     formatted_data = {
@@ -378,7 +381,8 @@ def check_datanode_health():
                     }
                     with open(dn_logs, 'a') as logfile:
                         logfile.write(json.dumps(formatted_data) + '\n')
-        # Esperar 1 minuto antes de realizar la próxima verificación
+                    reallocate_blocks(address)
+        # Esperar 1 minuto (o lo que pongamos el timer) antes de realizar la próxima verificación
         time.sleep(timer_healthRequest)
 
 def update_inventory_capacity(address, available_capacity, capacity, inventory_file_path):
@@ -398,6 +402,75 @@ def update_inventory_capacity(address, available_capacity, capacity, inventory_f
     with open(inventory_file_path, 'w') as inventory_file:
         json.dump(inventory_data, inventory_file, indent=4)
 
+def reallocate_blocks(address):
+    # Leer el archivo inventory.json
+    inventory_path = os.path.join(archive_url, 'inventory.json')
+
+    if not os.path.exists(inventory_path):
+        print("El archivo inventory.json no existe.")
+        return
+
+    with open(inventory_path, 'r') as inventory_file:
+        inventory_data = json.load(inventory_file)
+
+    # Buscar el DataNode caído
+    failed_datanode = None
+    for datanode in inventory_data['datanodes']:
+        if datanode['address'] == address:
+            failed_datanode = datanode
+            break
+
+    if failed_datanode is None:
+        print(f"No se encontró ningún DataNode con la dirección {address} en el inventario.")
+        return
+
+    # Buscar los bloques almacenados en el DataNode caído
+    blocks_to_reallocate = []
+    for datanode in inventory_data['datanodes']:
+        if datanode != failed_datanode:
+            for file_data in datanode['files']:
+                for block in file_data['blocks']:
+                    if block['name'] in failed_datanode['blocks']:
+                        blocks_to_reallocate.append((datanode, block['name']))
+                        break
+
+    if not blocks_to_reallocate:
+        print(f"No hay bloques para realojar del DataNode {address}.")
+        return
+
+    # Imprimir la información sobre los bloques a realojar
+    print("Bloques a realojar:")
+    for datanode, block_name in blocks_to_reallocate:
+        print(f"  - Bloque {block_name} está almacenado en el DataNode {datanode['address']}")
+
+    # Obtener los DataNodes disponibles para realojar los bloques
+    available_datanodes = get_available_datanodes(inventory_data)
+
+    if not available_datanodes:
+        print("No hay DataNodes disponibles para realojar los bloques.")
+        return
+
+    print("DataNodes disponibles para realojar los bloques:")
+    for datanode in available_datanodes:
+        print(f"  - DataNode {datanode['address']}")
+
+    # Realizar la realocación de bloques
+    for datanode, block_name in blocks_to_reallocate:
+        # Elegir un DataNode disponible para realojar el bloque
+        target_datanode = available_datanodes.pop(0)
+        # Actualizar el inventario para reflejar la realocación del bloque
+        for file_data in target_datanode['files']:
+            if file_data['name'] == block_name:
+                file_data['blocks'].append({'name': block_name, 'url': f"http://{target_datanode['address']}/files/{file_data['name']}/{block_name}"})
+                break
+
+    # Guardar los cambios en el archivo inventory.json
+    with open(inventory_path, 'w') as inventory_file:
+        json.dump(inventory_data, inventory_file, indent=2)
+
+    print("Reasignación de bloques completada.")
+
+
 
 # --- METODOS CON EL NAME NODE (LEADER Y FOLLOWER)
         
@@ -415,6 +488,16 @@ def run_health_check():
 
 # main
 if __name__ == '__main__':
+
+    # Argumentos de línea de comandos
+    # python namenode.py --host 192.168.1.100 --port 8080 --is_leader False
+    parser = argparse.ArgumentParser(description='Start the NameNode.')
+    parser.add_argument('--host', default=None, help='Host of the NameNode')
+    parser.add_argument('--port', default=None, help='Port of the NameNode')
+    parser.add_argument('--is_leader', default=None, help='Whether the NameNode is the leader or not')
+    
+    args = parser.parse_args()
+
     #config_path = 'config/config.ini'
     config = configparser.ConfigParser()
     #config.read(config_path)
@@ -433,13 +516,23 @@ if __name__ == '__main__':
     archive_url = config['NameNode']['archive_url']
     timer_healthResponse = float(config['NameNode']['timer_healthResponse'])
     timer_healthRequest = float(config['NameNode']['timer_healthRequest'])
+
+
+    # Actualizar los valores si se proporcionan argumentos en la línea de comandos
+    if args.host:
+        ip = args.host
+    if args.port:
+        port = args.port
+    if args.is_leader:
+        is_leader = args.is_leader.lower() == 'true'
     
-    # Inicia la verificación de la salud del datanode en un hilo separado
-    run_health_check()
-    #check_datanode_health()
+
+    if (is_leader):
+        # Inicia la verificación de la salud del datanode en un hilo separado
+        print("Soy un NameNode leader, checkeo que mis dataNodes sigan vivos.")
+        run_health_check()
 
     app.run(host=ip, debug=True, port=int(port))
     
-
 
 
