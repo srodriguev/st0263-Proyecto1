@@ -63,7 +63,7 @@ Proyecto 1 - st0263 - Topicos de telematica
 **NameNode:**
 - Failback del principal al secundario si se muere el otro: avisar a los demas integrantes y que actualicen la IP del namenode pa' los requests. -> En proceso.
 - Failover por si el ppal revive 
-- Si un dataNode se murió (se entera cuando realiza el health report) repartir los bloques que ese deberia tener entre los demas namenodes, actuando como un minicliente o delegandoselo.
+- Si un dataNode se murió (se entera cuando realiza el health report) repartir los bloques que ese deberia tener entre los demas namenodes, actuando como un minicliente o delegandoselo. -> Parcialmente implementado, identifica cuales debe duplicar y busca donde ponerlos pero aun no "reubica" fisicamente los bloques.
 
 
 # GRPC METHODS
