@@ -14,6 +14,11 @@ import argparse
 import socket
 
 app = Flask(__name__)
+_ONE_DAY_IN_SECONDS = 60 * 60 * 24
+
+# Método para obtener el tiempo de ejecución del DataNode
+def uptime():
+    return time.time() - app.start_time
 
 # --- METODOS API REST
 
@@ -492,12 +497,92 @@ def update_inventory_capacity(address, available_capacity, capacity, inventory_f
     with open(inventory_file_path, 'w') as inventory_file:
         json.dump(inventory_data, inventory_file, indent=4)
 
+#ping de follower a leader
+def ping_leader(ip, port):
+    url = f"http://{leader_ip}:{leader_port}/ping"
+    try:
+        response = requests.get(url)
+        if response.status_code == 200 and response.text == 'pong':
+            return True
+        else:
+            return False
+    except requests.RequestException:
+        return False
 
-# --- METODOS CON EL NAME NODE (LEADER Y FOLLOWER)
+
+
+# --- METODOS CON EL NAME NODE = FUNCION DE FOLLOWER
         
-def nameNodeHealthReport():
-    print("Health report de follower al leader. Si falla: failback y failover")
-    print("un if (si soy follower o leader)")
+def register_nn_follower(ip, port, leader_ip, leader_port):
+    url = f"http://{leader_ip}:{leader_port}/register"
+    uptime = uptime()
+    data = {"ip": ip, "port": port, "uptime": uptime, "up2date": False}
+    try:
+        response = requests.post(url, json=data)
+        if response.status_code == 200:
+            print("NameNode Follower registrado exitosamente en el NameNode Leader.")
+        else:
+            print("Error al registrar el NameNode Follower en el NameNode Leader.")
+    except Exception as e:
+        print("Error de conexión al intentar registrar el NameNode Follower:", e)
+
+
+# monitoreo hacia el leader
+
+def check_leader_nn_status():
+    failback_counter = 0
+    while True:
+        if ping_leader(leader_ip, leader_port):
+            print('Ping al líder exitoso')
+            failback_counter = 0
+        else:
+            print('Ping al líder fallido')
+            failback_counter += 1
+
+        if failback_counter >= fail_threshold:
+            print('Iniciando protocolo de failover...')
+            do_failover()
+            failback_counter = 0  # Reiniciar contador después del failover
+            #time.sleep(fail_threshold)  # Esperar antes de volver a intentar?
+
+        time.sleep(60)  # Esperar 1 minuto antes de enviar el próximo ping
+
+
+def do_failover():
+    print("lógica de failover de nn ppal a secundario.")
+
+
+# --- METODOS CON EL NAME NODE = FUNCION DE LEADER
+
+#ping de follower a leader para asegurarse que sigue vivo.
+@app.route('/ping', methods=['GET'])
+def ping():
+    return 'pong'
+        
+def update_registered_namenodes(ip, port, uptime):
+    with open(registered_namenodes_file, mode='a', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow([f"{ip}:{port}", "active", uptime, ""])
+
+def update_active_namenodes(ip, port, uptime):
+    with open(active_namenodes_file, mode='a', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow([f"{ip}:{port}", "active", uptime, ""])
+
+#Registrar un nn follower nuevo.
+@app.route('/registernn', methods=['POST'])
+def register_nn():
+    data = request.json
+    ip = data.get('ip')
+    port = data.get('port')
+    uptime = data.get('uptime')
+    if ip and port and uptime:
+        update_registered_namenodes(ip, port, uptime)
+        update_active_namenodes(ip, port, uptime)
+        return jsonify({"message": "NameNode Follower registrado exitosamente en el NameNode Leader."}), 200
+    else:
+        return jsonify({"error": "Se requieren las direcciones IP, de puerto y el tiempo de uptime del NameNode Follower."}), 400
+
 
 # --- MAIN LOOP
 # IS LEADER = BOOLEANO SI ES UN NAMENODE LIDER O FOLLOWER
@@ -506,6 +591,9 @@ def nameNodeHealthReport():
 # threads 
 def run_health_check():
     threading.Thread(target=check_datanode_health).start()
+
+def run_nn_health_check():
+    threading.Thread(target=check_leader_nn_status).start()
 
 # main
 if __name__ == '__main__':
@@ -534,9 +622,12 @@ if __name__ == '__main__':
     logged_peers_file = config['NameNode']['logged_clients_file']
     registered_datanodes_file = config['NameNode']['registered_datanodes_file']
     active_datanodes_file = config['NameNode']['active_datanodes_file']
+    registered_namenodes_file = config['NameNode']['registered_namenodes_file']
+    active_namenodes_file = config['NameNode']['active_namenodes_file']
     archive_url = config['NameNode']['archive_url']
     timer_healthResponse = float(config['NameNode']['timer_healthResponse'])
     timer_healthRequest = float(config['NameNode']['timer_healthRequest'])
+    fail_threshold = float(config['NameNode']['fail_threshold'])
 
 
     # Actualizar los valores si se proporcionan argumentos en la línea de comandos
@@ -550,9 +641,14 @@ if __name__ == '__main__':
 
     if (is_leader):
         # Inicia la verificación de la salud del datanode en un hilo separado
-        print("Soy un NameNode leader, checkeo que mis dataNodes sigan vivos.")
+        print("Soy un NameNode leader, checkeo que mis followers sigan vivos.")
         run_health_check()
+    else:
+        print("Soy un nameNode follower, me registro con mi lider")
+        register_nn_follower()
+        run_nn_health_check()
 
+    app.start_time = time.time()
     app.run(host=ip, debug=True, port=int(port))
     
 
