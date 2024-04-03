@@ -263,7 +263,6 @@ def allocate_blocks():
 
     return jsonify(block_assignments), 200
 
-
 def get_available_datanodes(inventory_data):
     available_datanodes = []
     for datanode in inventory_data['datanodes']:
@@ -274,6 +273,75 @@ def get_available_datanodes(inventory_data):
             if available_space >= total_space * 0.2:  # Solo considerar nodos con al menos el 20% de su espacio disponible
                 available_datanodes.append(datanode)
     return available_datanodes
+
+def reallocate_blocks(address):
+    # Leer el archivo inventory.json
+    inventory_path = os.path.join(archive_url, 'inventory.json')
+
+    if not os.path.exists(inventory_path):
+        print("El archivo inventory.json no existe.")
+        return
+
+    with open(inventory_path, 'r') as inventory_file:
+        inventory_data = json.load(inventory_file)
+
+    # Buscar el DataNode caído
+    failed_datanode = None
+    for datanode in inventory_data['datanodes']:
+        if datanode['address'] == address:
+            failed_datanode = datanode
+            break
+
+    if failed_datanode is None:
+        print(f"No se encontró ningún DataNode con la dirección {address} en el inventario.")
+        return
+
+    # Buscar los bloques almacenados en el DataNode caído
+    blocks_to_reallocate = []
+    for datanode in inventory_data['datanodes']:
+        if datanode != failed_datanode:
+            for file_data in datanode['files']:
+                for block in file_data['blocks']:
+                    for failed_block in failed_datanode.get('files', []):
+                        if failed_block['name'] == file_data['name']:
+                            blocks_to_reallocate.append((datanode, block['name']))
+                            break
+
+    if not blocks_to_reallocate:
+        print(f"No hay bloques para realojar del DataNode {address}.")
+        return
+
+    # Imprimir la información sobre los bloques a realojar
+    print("Bloques a realojar:")
+    for datanode, block_name in blocks_to_reallocate:
+        print(f"  - Bloque {block_name} está almacenado en el DataNode {datanode['address']}")
+
+    # Obtener los DataNodes disponibles para realojar los bloques
+    available_datanodes = get_available_datanodes(inventory_data)
+
+    if not available_datanodes:
+        print("No hay DataNodes disponibles para realojar los bloques.")
+        return
+
+    print("DataNodes disponibles para realojar los bloques:")
+    for datanode in available_datanodes:
+        print(f"  - DataNode {datanode['address']}")
+
+    # Realizar la realocación de bloques
+    for datanode, block_name in blocks_to_reallocate:
+        # Elegir un DataNode disponible para realojar el bloque
+        target_datanode = available_datanodes.pop(0)
+        # Actualizar el inventario para reflejar la realocación del bloque
+        for file_data in target_datanode.get('files', []):
+            if file_data['name'] == block_name:
+                file_data['blocks'].append({'name': block_name, 'url': f"http://{target_datanode['address']}/files/{file_data['name']}/{block_name}"})
+                break
+
+    # Guardar los cambios en el archivo inventory.json
+    with open(inventory_path, 'w') as inventory_file:
+        json.dump(inventory_data, inventory_file, indent=2)
+
+    print("Reasignación de bloques completada.")
 
 
 
@@ -333,7 +401,6 @@ def register_dn():
     }
     return jsonify(response), 200
 
-# reporte de salud a cada DataNode
 def check_datanode_health():
     while True:
         # Abrir el archivo CSV de data nodes registrados y leer las direcciones
@@ -353,7 +420,7 @@ def check_datanode_health():
                             'status': 'online',
                             'uptime_seconds': data['uptime_seconds'],
                             'capacity': data['capacity'],
-                            'available_capacity':data['available_capacity']
+                            'available_capacity': data['available_capacity']
                         }
 
                         print("update space definition in inventory: ")
@@ -371,6 +438,8 @@ def check_datanode_health():
                         }
                         with open(dn_logs, 'a') as logfile:
                             logfile.write(json.dumps(formatted_data) + '\n')
+                        update_datanode_status(address, 'offline')
+                        #LLamar al método que decide donde reguardar lo que habia en ese nodo.
                         reallocate_blocks(address)
                 except requests.RequestException:
                     # Si hay un error al realizar la solicitud, marcar el data node como no disponible
@@ -381,10 +450,31 @@ def check_datanode_health():
                     }
                     with open(dn_logs, 'a') as logfile:
                         logfile.write(json.dumps(formatted_data) + '\n')
+                    update_datanode_status(address, 'offline')
+                    #LLamar al método que decide donde reguardar lo que habia en ese nodo.
                     reallocate_blocks(address)
         # Esperar 1 minuto (o lo que pongamos el timer) antes de realizar la próxima verificación
         time.sleep(timer_healthRequest)
 
+# Cambiar el status de un datanode de online a offline o viceversa
+def update_datanode_status(address, status):
+    # Leer el archivo de inventario JSON
+    inventory_file_path = os.path.join(archive_url, 'inventory.json')
+    with open(inventory_file_path, 'r') as inventory_file:
+        inventory_data = json.load(inventory_file)
+    
+    # Buscar el nodo de datos con la dirección especificada
+    for datanode in inventory_data['datanodes']:
+        if datanode['address'] == address:
+            # Actualizar el campo status
+            datanode['status'] = status
+            break
+    
+    # Escribir los datos actualizados de inventario de nuevo al archivo JSON
+    with open(inventory_file_path, 'w') as inventory_file:
+        json.dump(inventory_data, inventory_file, indent=4)
+
+#Actualizar la capacidad del datanode a medida que se va llenando con archivos
 def update_inventory_capacity(address, available_capacity, capacity, inventory_file_path):
     # Leer el archivo de inventario JSON
     with open(inventory_file_path, 'r') as inventory_file:
@@ -394,82 +484,13 @@ def update_inventory_capacity(address, available_capacity, capacity, inventory_f
     for datanode in inventory_data['datanodes']:
         if datanode['address'] == address:
             # Actualizar los valores de capacidad
-            datanode['space']['available_space'] = available_capacity
-            datanode['space']['capacity'] = capacity
+            datanode['available_space'] = available_capacity
+            datanode['total_space'] = capacity
             break
     
     # Escribir los datos actualizados de inventario de nuevo al archivo JSON
     with open(inventory_file_path, 'w') as inventory_file:
         json.dump(inventory_data, inventory_file, indent=4)
-
-def reallocate_blocks(address):
-    # Leer el archivo inventory.json
-    inventory_path = os.path.join(archive_url, 'inventory.json')
-
-    if not os.path.exists(inventory_path):
-        print("El archivo inventory.json no existe.")
-        return
-
-    with open(inventory_path, 'r') as inventory_file:
-        inventory_data = json.load(inventory_file)
-
-    # Buscar el DataNode caído
-    failed_datanode = None
-    for datanode in inventory_data['datanodes']:
-        if datanode['address'] == address:
-            failed_datanode = datanode
-            break
-
-    if failed_datanode is None:
-        print(f"No se encontró ningún DataNode con la dirección {address} en el inventario.")
-        return
-
-    # Buscar los bloques almacenados en el DataNode caído
-    blocks_to_reallocate = []
-    for datanode in inventory_data['datanodes']:
-        if datanode != failed_datanode:
-            for file_data in datanode['files']:
-                for block in file_data['blocks']:
-                    if block['name'] in failed_datanode['blocks']:
-                        blocks_to_reallocate.append((datanode, block['name']))
-                        break
-
-    if not blocks_to_reallocate:
-        print(f"No hay bloques para realojar del DataNode {address}.")
-        return
-
-    # Imprimir la información sobre los bloques a realojar
-    print("Bloques a realojar:")
-    for datanode, block_name in blocks_to_reallocate:
-        print(f"  - Bloque {block_name} está almacenado en el DataNode {datanode['address']}")
-
-    # Obtener los DataNodes disponibles para realojar los bloques
-    available_datanodes = get_available_datanodes(inventory_data)
-
-    if not available_datanodes:
-        print("No hay DataNodes disponibles para realojar los bloques.")
-        return
-
-    print("DataNodes disponibles para realojar los bloques:")
-    for datanode in available_datanodes:
-        print(f"  - DataNode {datanode['address']}")
-
-    # Realizar la realocación de bloques
-    for datanode, block_name in blocks_to_reallocate:
-        # Elegir un DataNode disponible para realojar el bloque
-        target_datanode = available_datanodes.pop(0)
-        # Actualizar el inventario para reflejar la realocación del bloque
-        for file_data in target_datanode['files']:
-            if file_data['name'] == block_name:
-                file_data['blocks'].append({'name': block_name, 'url': f"http://{target_datanode['address']}/files/{file_data['name']}/{block_name}"})
-                break
-
-    # Guardar los cambios en el archivo inventory.json
-    with open(inventory_path, 'w') as inventory_file:
-        json.dump(inventory_data, inventory_file, indent=2)
-
-    print("Reasignación de bloques completada.")
-
 
 
 # --- METODOS CON EL NAME NODE (LEADER Y FOLLOWER)
