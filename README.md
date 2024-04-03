@@ -61,8 +61,8 @@ Proyecto 1 - st0263 - Topicos de telematica
 - Metodos Download y Upload de gRPC con el cliente.
 
 **NameNode:**
-- Failback del principal al secundario si se muere el otro: avisar a los demas integrantes y que actualicen la IP del namenode pa' los requests. 
-- Failover por si el ppal revive -> En proceso.
+- Failback del principal al secundario si se muere el otro: avisar a los demas integrantes y que actualicen la IP del namenode pa' los requests. -> En proceso.
+- Failover por si el ppal revive 
 - Si un dataNode se murió (se entera cuando realiza el health report) repartir los bloques que ese deberia tener entre los demas namenodes, actuando como un minicliente o delegandoselo.
 
 
