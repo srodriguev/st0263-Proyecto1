@@ -110,7 +110,7 @@ Ya tiene los metodos de consulta y de agregar archivos, le devuelve en que 2 nod
 Correrlo con parametros custom o como follower. 
 
 ```python
-python namenode.py --host 192.168.1.100 --port 8080 --is_leader False
+python3 namenode.py --host 127.0.0.1 --port 8080 --is_leader False
 ```
 
 # Decisiones de diseño

@@ -16,8 +16,8 @@ import socket
 app = Flask(__name__)
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
-# Método para obtener el tiempo de ejecución del DataNode
-def uptime():
+# Método para obtener el tiempo de ejecución del NameNode
+def get_uptime():
     return time.time() - app.start_time
 
 # --- METODOS API REST
@@ -513,10 +513,10 @@ def ping_leader(ip, port):
 
 # --- METODOS CON EL NAME NODE = FUNCION DE FOLLOWER
         
-def register_nn_follower(ip, port, leader_ip, leader_port):
-    url = f"http://{leader_ip}:{leader_port}/register"
-    uptime = uptime()
-    data = {"ip": ip, "port": port, "uptime": uptime, "up2date": False}
+def register_nn_follower():
+    url = f"http://{leader_ip}:{leader_port}/registernn"
+    my_uptime = get_uptime()
+    data = {"ip": ip, "port": port, "uptime": my_uptime, "up2date": False}
     try:
         response = requests.post(url, json=data)
         if response.status_code == 200:
@@ -530,6 +530,7 @@ def register_nn_follower(ip, port, leader_ip, leader_port):
 # monitoreo hacia el leader
 
 def check_leader_nn_status():
+    print("Check si mi lider sigue con vida!")
     failback_counter = 0
     while True:
         if ping_leader(leader_ip, leader_port):
@@ -541,7 +542,7 @@ def check_leader_nn_status():
 
         if failback_counter >= fail_threshold:
             print('Iniciando protocolo de failover...')
-            do_failover(ip, port)
+            do_failover()
             failback_counter = 0  # Reiniciar contador después del failover
             #time.sleep(fail_threshold)  # Esperar antes de volver a intentar?
 
@@ -555,32 +556,49 @@ def do_failover():
     try:
         with open(registered_peers_file, 'r') as file:
             clients_data = json.load(file)
-            for ip, clients in clients_data.items():
-                for user_data in clients:
-                    user_ip, _ = ip.split(":")
-                    success = change_namenode(user_ip, port)
-                    failover_results["registered_clients"][ip] = success
+            for ip, _ in clients_data.items():
+                url = f"http://{ip}/changenamenode"
+                success = change_namenode(url, my_dir)
+                failover_results["registered_clients"][ip] = success
     except FileNotFoundError:
         print("Error: No se encontró el archivo de clientes registrados.")
+    except json.JSONDecodeError:
+        print("Error: No se pudo decodificar el archivo JSON de clientes registrados.")
+    except Exception as e:
+        print(f"Error inesperado al procesar el archivo de clientes registrados: {e}")
 
     # Paso 2: Cambiar el NameNode en los DataNodes registrados
     try:
         with open(registered_datanodes_file, 'r') as file:
             reader = csv.DictReader(file)
             for row in reader:
-                datanode_url = row["address"]
-                datanode_ip, _ = datanode_url.split(":")
-                success = change_namenode(datanode_ip, port)
-                failover_results["registered_datanodes"][datanode_url] = success
+                ip = row["address"].split(":")[0]
+                url = f"http://{ip}/changenamenode"
+                success = change_namenode(url, my_dir)
+                failover_results["registered_datanodes"][ip] = success
     except FileNotFoundError:
         print("Error: No se encontró el archivo de DataNodes registrados.")
+    except Exception as e:
+        print(f"Error inesperado al procesar el archivo de DataNodes registrados: {e}")
 
     # Paso 3: Guardar los resultados del failover
-    with open(fail_logs, 'w') as file:
-        json.dump(failover_results, file, indent=2)
+    try:
+        with open(fail_logs, 'w') as file:
+            json.dump(failover_results, file, indent=2)
+    except Exception as e:
+        print(f"Error al guardar los resultados del failover en el archivo de registros: {e}")
 
-def change_namenode(ip, port):
-    url = f"http://{ip}:{port}/change_namenode"
+def change_namenode(url, my_dir):
+    try:
+        response = requests.post(url, json={"my_dir": my_dir})
+        return response.status_code == 200
+    except requests.RequestException as e:
+        print(f"Error al enviar solicitud POST a {url}: {e}")
+        return False
+
+
+def change_namenode(url):
+    url = f"http://{url}/change_namenode"
 
     try:
         response = requests.post(url)
@@ -667,6 +685,8 @@ if __name__ == '__main__':
     timer_healthRequest = float(config['NameNode']['timer_healthRequest'])
     fail_threshold = float(config['NameNode']['fail_threshold'])
 
+    app.start_time = time.time()
+
 
     # Actualizar los valores si se proporcionan argumentos en la línea de comandos
     if args.host:
@@ -675,6 +695,8 @@ if __name__ == '__main__':
         port = args.port
     if args.is_leader:
         is_leader = args.is_leader.lower() == 'true'
+
+    my_dir = f"{ip}:{port}"
     
 
     if (is_leader):
@@ -686,7 +708,8 @@ if __name__ == '__main__':
         register_nn_follower()
         run_nn_health_check()
 
-    app.start_time = time.time()
+
+    print(f"Yo voy a correr en {ip} y {port}")
     app.run(host=ip, debug=True, port=int(port))
     
 
