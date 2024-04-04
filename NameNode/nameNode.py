@@ -541,15 +541,52 @@ def check_leader_nn_status():
 
         if failback_counter >= fail_threshold:
             print('Iniciando protocolo de failover...')
-            do_failover()
+            do_failover(ip, port)
             failback_counter = 0  # Reiniciar contador después del failover
             #time.sleep(fail_threshold)  # Esperar antes de volver a intentar?
 
         time.sleep(60)  # Esperar 1 minuto antes de enviar el próximo ping
 
-
+# metodo de failover, en proceso!!!
 def do_failover():
-    print("lógica de failover de nn ppal a secundario.")
+    failover_results = {"registered_clients": {}, "registered_datanodes": {}}
+
+    # Paso 1: Cambiar el NameNode en los clientes registrados
+    try:
+        with open(registered_peers_file, 'r') as file:
+            clients_data = json.load(file)
+            for ip, clients in clients_data.items():
+                for user_data in clients:
+                    user_ip, _ = ip.split(":")
+                    success = change_namenode(user_ip, port)
+                    failover_results["registered_clients"][ip] = success
+    except FileNotFoundError:
+        print("Error: No se encontró el archivo de clientes registrados.")
+
+    # Paso 2: Cambiar el NameNode en los DataNodes registrados
+    try:
+        with open(registered_datanodes_file, 'r') as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                datanode_url = row["address"]
+                datanode_ip, _ = datanode_url.split(":")
+                success = change_namenode(datanode_ip, port)
+                failover_results["registered_datanodes"][datanode_url] = success
+    except FileNotFoundError:
+        print("Error: No se encontró el archivo de DataNodes registrados.")
+
+    # Paso 3: Guardar los resultados del failover
+    with open(fail_logs, 'w') as file:
+        json.dump(failover_results, file, indent=2)
+
+def change_namenode(ip, port):
+    url = f"http://{ip}:{port}/change_namenode"
+
+    try:
+        response = requests.post(url)
+        return response.status_code == 200
+    except requests.RequestException:
+        return False
 
 
 # --- METODOS CON EL NAME NODE = FUNCION DE LEADER
@@ -618,6 +655,7 @@ if __name__ == '__main__':
     leader_ip = config['NameNode']['leader_ip']
     leader_port = config['NameNode']['leader_port']
     dn_logs = config['NameNode']['dn_logs']
+    fail_logs = config['NameNode']['fail_logs']
     registered_peers_file = config['NameNode']['registered_clients_file']
     logged_peers_file = config['NameNode']['logged_clients_file']
     registered_datanodes_file = config['NameNode']['registered_datanodes_file']

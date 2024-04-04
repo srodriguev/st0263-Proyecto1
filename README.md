@@ -52,7 +52,7 @@ Proyecto 1 - st0263 - Topicos de telematica
 - No se ha probado el manejo de errores en algunos modulos
 
 **Client:**
-- mover los helpers a su propio archivo python para que se puedan reutilizar y por orden, corregir errores de importacion. 
+- mover los helpers a su propio archivo python para que se puedan reutilizar y por orden, corregir errores de importacion (a mi no me estaba dando sobs). 
 - Metodos Download y Upload de gRPC con el dataNode.
 - Forma de interactuar con el programa en vivo (loop principal de acciones o UI)
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from flask import Flask, jsonify, send_file
+from flask import Flask, jsonify, send_file, request
 import os
 import time
 import configparser
@@ -85,6 +85,22 @@ def stock_report():
     # Devolver el contenido del JSON junto con el mensaje
     return send_file("./inventory/inventory.json", as_attachment=True)
 
+# -- METODOS DE FAILBACK Y FAILOVER DEL NAMENODE
+
+@app.route('/change_namenode', methods=['POST'])
+def change_namenode():
+    data = request.json
+    newLeader_ip = data.get('newLeader_ip')
+    newLeader_port = data.get('newLeader_port')
+
+    # Aquí realizar la lógica para actualizar los datos del NameNode
+    # Por ejemplo, actualizar las variables de configuración con los nuevos valores
+    nn_ip = newLeader_ip
+    nn_port = newLeader_port
+    nameNode_dir = f"{nn_ip}:{nn_port}"
+
+    # Devolver una respuesta
+    return jsonify({"message": "NameNode líder actualizado exitosamente."}), 200
 
 # METODOS GPRC
 
@@ -148,9 +164,19 @@ if __name__ == '__main__':
     datanode_folder = config['DataNode']['datanode_folder']
     capacity = config['DataNode']['capacity']
     available_capacity = config['DataNode']['available_capacity']
+
+    #config NameNode dir
+    nn_ip = config['NameNode']['leader_ip']
+    nn_port = config['NameNode']['leader_port']
+
+    nameNode_dir = f"{nn_ip}:{nn_port}"
+
+    # config dataNode dir
+    dataNode_dir = f"{host}:{port}"
+    
+    
     app.start_time = time.time()
 
-    dataNode_dir = f"{host}:{port}"
 
     #rest_api_thread = threading.Thread(target=run_rest_api_server, args=(host, port))
     #grpc_thread = threading.Thread(target=run_grpc_server)

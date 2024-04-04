@@ -71,3 +71,82 @@ http://localhost:5000/allocateblocks
     "file_name": "example_write_file.txt",
     "num_blocks": 3
 }
+
+
+---- RESPUESTAS DE REQUESTS: 
+
+Health report datanode:
+
+{
+    "address": "127.0.0.1:6000",
+    "available_capacity": 49999994.0,
+    "capacity": "50000000",
+    "status": "online",
+    "uptime_seconds": 22.268123865127563
+}
+
+register datanode:
+
+{
+    "available_space": 249000,
+    "message": "Data node registrado exitosamente",
+    "namenode_address": "127.0.0.1:8000",
+    "total_space": 250000,
+    "uptime_seconds": 3600
+}
+
+
+inventory:
+{
+    "files": [
+        {
+            "name": "file1.txt",
+            "available": true
+        },
+        {
+            "name": "loremIpsum.txt",
+            "available": false
+        },
+        {
+            "name": "example.txt",
+            "available": true
+        }
+    ]
+}
+
+tener la locacion de un file especifico:
+
+    {
+        "block_name": "block3",
+        "block_url": "http://127.0.0.1:6000/files/example.txt/block1"
+    },
+    {
+        "block_name": "block4",
+        "block_url": "http://127.0.0.1:6000/files/example.txt/block2"
+    }
+
+
+respuesta a allocateblocks:
+
+[
+    {
+        "assigned_datanode": "127.0.0.1:6000",
+        "block_name": "block1",
+        "block_url": "http://127.0.0.1:6000/files/example_write_file.txt/block1"
+    },
+    {
+        "assigned_datanode": "127.0.0.1:6001",
+        "block_name": "block1",
+        "block_url": "http://127.0.0.1:6001/files/example_write_file.txt/block1"
+    },
+    {
+        "assigned_datanode": "127.0.0.1:6000",
+        "block_name": "block2",
+        "block_url": "http://127.0.0.1:6000/files/example_write_file.txt/block2"
+    },
+    {
+        "assigned_datanode": "127.0.0.1:6001",
+        "block_name": "block2",
+        "block_url": "http://127.0.0.1:6001/files/example_write_file.txt/block2"
+    }
+]

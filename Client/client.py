@@ -166,6 +166,24 @@ def write_file(file_name, num_blocks):
     else:
         print("Error al obtener las asignaciones de bloques:", response.text)
 
+# --- METODOS DE FAILBACK Y FAILOVER DEL NAMENODE
+        
+@app.route('/change_namenode', methods=['POST'])
+def change_namenode():
+    data = request.json
+    newLeader_ip = data.get('newLeader_ip')
+    newLeader_port = data.get('newLeader_port')
+
+    # Aquí realizar la lógica para actualizar los datos del NameNode
+    # Por ejemplo, actualizar las variables de configuración con los nuevos valores
+    nn_ip = newLeader_ip
+    nn_port = newLeader_port
+    nameNode_dir = f"{nn_ip}:{nn_port}"
+
+    # Devolver una respuesta
+    return jsonify({"message": "NameNode líder actualizado exitosamente."}), 200
+
+
 # --- METODOS DE GPRC
 
 def download_block(file_name, block_name):
@@ -220,8 +238,8 @@ if __name__ == '__main__':
     client_dir = f"{ip}:{port}"
 
     #config NameNode
-    nn_ip = config['NameNode']['ip']
-    nn_port = config['NameNode']['port']
+    nn_ip = config['NameNode']['leader_ip']
+    nn_port = config['NameNode']['leader_port']
 
     nameNode_dir = f"{nn_ip}:{nn_port}"
 
