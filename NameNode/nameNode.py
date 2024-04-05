@@ -32,6 +32,7 @@ def load_registered_peers():
     except (FileNotFoundError, json.JSONDecodeError):
         return {}
 
+# Funciones para cargar el json
 def load_logged_peers():
     try:
         with open(logged_peers_file, 'r') as file:
@@ -39,7 +40,7 @@ def load_logged_peers():
     except (FileNotFoundError, json.JSONDecodeError):
         return {}
 
-# manejo de usuarios
+# manejo de usuarios/clientes
 @app.route('/register', methods=['POST'])
 def register():
     try:
@@ -63,6 +64,7 @@ def register():
         error_message = f"Oops, algo salió mal con el registro: {str(e)}"
         return error_message, 401
 
+# manejo de usuarios/clientes
 @app.route('/remove_user', methods=['POST'])
 def remove_user():
     try:
@@ -85,6 +87,7 @@ def remove_user():
         error_message = f"Oops, algo salió mal al eliminar el usuario: {str(e)}"
         return error_message, 401
 
+# manejo de usuarios/clientes
 @app.route('/login', methods=['POST'])
 def login():
     try:
@@ -102,6 +105,7 @@ def login():
         error_message = f"Oops, algo salió mal con el inicio de sesión: {str(e)}"
         return error_message, 500
 
+# manejo de usuarios/clientes
 @app.route('/logout', methods=['POST'])
 def logout():
     try:
@@ -114,12 +118,16 @@ def logout():
         return error_message, 500
 
 # helpers
+
+#hash de la contraseña
 def hash_password(password):
     salt = bcrypt.gensalt()
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
     return hashed_password.decode('utf-8')
 
 # Funciones para escribir en los json correspondientes
+
+#escribir los clientes registrados
 def write_registered_peers(logged_peer):
     registered_peers = load_registered_peers() 
     for peer_name, peer_ip in logged_peer.items():
@@ -130,6 +138,7 @@ def write_registered_peers(logged_peer):
     with open(registered_peers_file, 'w') as file:
         json.dump(registered_peers, file, indent=4)
 
+#escribir los clientes loggeados
 def write_logged_peers(logged_peer):
     logged_peers = load_logged_peers() 
     for peer_name, peer_ip in logged_peer.items():
@@ -140,6 +149,7 @@ def write_logged_peers(logged_peer):
     with open(logged_peers_file, 'w') as file:
         json.dump(logged_peers, file, indent=4)
 
+#escribir los clientes eliminados
 def remove_logged_peer(peer_ip):
     logged_peers = load_logged_peers()
     keys_to_delete = []
@@ -150,11 +160,13 @@ def remove_logged_peer(peer_ip):
     with open(logged_peers_file, 'w') as file:
         json.dump(logged_peers, file, indent=4)
 
+#obtener direccion ip
 def get_ip_address():
     hostname = socket.gethostname()
     ip_address = socket.gethostbyname(hostname)
     return ip_address
 
+#verificar contraseña
 def verify_password(json_file, ip_address, password):
     with open(json_file, 'r') as f:
         data = json.load(f)
@@ -173,7 +185,7 @@ def verify_password(json_file, ip_address, password):
     
 # LEER
 
-# ver el catalogo    
+# para que el cliente vea el catalogo    
 @app.route('/inventory', methods=['GET'])
 def get_inventory():
     catalog_path = os.path.join(archive_url, 'catalog.json')
@@ -268,6 +280,7 @@ def allocate_blocks():
 
     return jsonify(block_assignments), 200
 
+# devuelve datanodes que estan disponibles
 def get_available_datanodes(inventory_data):
     available_datanodes = []
     for datanode in inventory_data['datanodes']:
@@ -279,6 +292,7 @@ def get_available_datanodes(inventory_data):
                 available_datanodes.append(datanode)
     return available_datanodes
 
+#realocar los bloques que tiene un datanode caido
 def reallocate_blocks(address):
     # Leer el archivo inventory.json
     inventory_path = os.path.join(archive_url, 'inventory.json')
@@ -512,7 +526,8 @@ def ping_leader(ip, port):
 
 
 # --- METODOS CON EL NAME NODE = FUNCION DE FOLLOWER
-        
+
+# registrar un namenode nuevo        
 def register_nn_follower():
     url = f"http://{leader_ip}:{leader_port}/registernn"
     my_uptime = get_uptime()
@@ -527,8 +542,7 @@ def register_nn_follower():
         print("Error de conexión al intentar registrar el NameNode Follower:", e)
 
 
-# monitoreo hacia el leader
-
+# monitoreo hacia el leader para ver si sigue vivo
 def check_leader_nn_status():
     print("Check si mi lider sigue con vida!")
     failback_counter = 0
@@ -541,24 +555,26 @@ def check_leader_nn_status():
             failback_counter += 1
 
         if failback_counter >= fail_threshold:
-            print('Iniciando protocolo de failover...')
+            print('Cumplimos las condiciones para comenzar el failover...')
             do_failover()
             failback_counter = 0  # Reiniciar contador después del failover
             #time.sleep(fail_threshold)  # Esperar antes de volver a intentar?
 
-        time.sleep(60)  # Esperar 1 minuto antes de enviar el próximo ping
+        time.sleep(10)  # Esperar x tiempo antes de enviar el próximo ping
 
 # metodo de failover, en proceso!!!
 def do_failover():
     failover_results = {"registered_clients": {}, "registered_datanodes": {}}
-
+    #print("Iniciamos failover...")
     # Paso 1: Cambiar el NameNode en los clientes registrados
     try:
         with open(registered_peers_file, 'r') as file:
+            #print("registered peers: ", registered_peers_file)
             clients_data = json.load(file)
             for ip, _ in clients_data.items():
-                url = f"http://{ip}/changenamenode"
-                success = change_namenode(url, my_dir)
+                client_url = f"http://{ip}/changenamenode"
+                print(client_url)
+                success = change_namenode(client_url, my_dir)
                 failover_results["registered_clients"][ip] = success
     except FileNotFoundError:
         print("Error: No se encontró el archivo de clientes registrados.")
@@ -590,14 +606,14 @@ def do_failover():
 
 def change_namenode(url, my_dir):
     try:
-        response = requests.post(url, json={"my_dir": my_dir})
+        response = requests.post(url, json={"new_url": my_dir})
         return response.status_code == 200
     except requests.RequestException as e:
         print(f"Error al enviar solicitud POST a {url}: {e}")
         return False
 
-
-def change_namenode(url):
+#cambiar el namenode por la nueva url, llamada a rest
+def change_namenode1(url):
     url = f"http://{url}/change_namenode"
 
     try:
@@ -613,15 +629,28 @@ def change_namenode(url):
 @app.route('/ping', methods=['GET'])
 def ping():
     return 'pong'
-        
+
+# helper para que no se repitan los namenodes registrados
+def is_combination_present(file_path, ip, port):
+    with open(file_path, mode='r', newline='') as file:
+        reader = csv.reader(file)
+        for row in reader:
+            if row and row[0] == f"{ip}:{port}":
+                return True
+    return False
+
+# update al archivo de namenodes registrados        
 def update_registered_namenodes(ip, port, uptime):
-    with open(registered_namenodes_file, mode='a', newline='') as file:
+    with open(registered_namenodes_file, mode='r+', newline='') as file:
         writer = csv.writer(file)
+        file.seek(0, 2)  # Coloca el cursor al final del archivo
         writer.writerow([f"{ip}:{port}", "active", uptime, ""])
 
+# update a los namenodes activos
 def update_active_namenodes(ip, port, uptime):
-    with open(active_namenodes_file, mode='a', newline='') as file:
+    with open(active_namenodes_file, mode='r+', newline='') as file:
         writer = csv.writer(file)
+        file.seek(0, 2)  # Coloca el cursor al final del archivo
         writer.writerow([f"{ip}:{port}", "active", uptime, ""])
 
 #Registrar un nn follower nuevo.
@@ -654,7 +683,7 @@ def run_nn_health_check():
 if __name__ == '__main__':
 
     # Argumentos de línea de comandos
-    # python namenode.py --host 192.168.1.100 --port 8080 --is_leader False
+    # por ejemplo: python namenode.py --host 192.168.1.100 --port 8080 --is_leader False
     parser = argparse.ArgumentParser(description='Start the NameNode.')
     parser.add_argument('--host', default=None, help='Host of the NameNode')
     parser.add_argument('--port', default=None, help='Port of the NameNode')
@@ -662,9 +691,7 @@ if __name__ == '__main__':
     
     args = parser.parse_args()
 
-    #config_path = 'config/config.ini'
     config = configparser.ConfigParser()
-    #config.read(config_path)
     config.read('../config.ini')
     id = config['NameNode']['name']
     ip = config['NameNode']['ip']
