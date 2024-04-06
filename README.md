@@ -87,39 +87,31 @@ Si ya existe la carpeta con el filename del archivo mete el nuevo bloque ahi, si
 
 el archivo asociado debera llamarse dataNode.proto
 
+
 # API REST METHODS
 
-El resto de la comunicacion es API REST, metodos como:
+El resto de la comunicacion es API REST
 
--Login
--Logout
--RegisterUser
--DeleteUser
--Ping
--GetInventory
--GetFileBlocks
--AllocateBlocks
--RegisterDataNode
--RegisterNameNode
-
-# NOTAS DE DISEÑO Y CONFIGURACIÓN
-
-## Configs
+# CONFIGS
 
 Puse un config global por fuera para no estar revisando en cual puerto esta corriendo que cosa, se le puede poner que haga override si al ejecutar el comando de inicio se ingresa un ip/puerto diferentes para poder correr por ejemplo varios datanodes en 1 maquina.
 
-## Threading
+# Threading
 
 Para que Flask y gRPC corran a la vez debe estar debug en false, o si no no se pueden mezclar. 
 
 
-## Sobre el NameNode
+# Sobre el NameNode
 
 Por ahora no esta checkeando el login, pero antes de hacer una consulta en el archivo final debo verificar que desde la ip que se hace la consulta de inventario o getfile sea una ip en logged_peers.json
 
 Ya tiene los metodos de consulta y de agregar archivos, le devuelve en que 2 nodos debe guardar cada chunk y es trabajo del cliente guardar cada chunk 2 veces. 
 
 Correrlo con parametros custom o como follower. 
+
+```python
+python namenode.py --host 192.168.1.100 --port 8080 --is_leader False
+```
 
 # Decisiones de diseño
 
@@ -129,27 +121,5 @@ Pero ese dato no se actualiza y se puede usar para comparar si alguna discrepanc
 
 Podria ser mas eficiente, si, pero por ahora esta asi.
 
+
 !!! Falta verificar si se esta actualizando bien el nuevo espacio disponible en cada nodo con el checkHealthReport!!!
-
-# Orden en que se deberian poner a correr las piezas para un correcto funcionamiento:
-
-1. NameNode principal
-2. NameNode secundario
-3. DataNode 1
-4. DataNode 2
-5. DataNode 3
-6. Client
-
-# Comandos relevantes
-
-Para correr el codigo en orden, por ejemplo
-
-```python
-python3 namenode.py
-python3 namenode.py --host 127.0.0.1 --port 5001 --is_leader False
-python3 datanode.py
-python3 datanode.py --host 127.0.0.1 --port 6001
-python3 datanode.py --host 127.0.0.1 --port 6002
-python3 client.py 
-python3 client.py --host 127.0.0.1 --port 5501
-```

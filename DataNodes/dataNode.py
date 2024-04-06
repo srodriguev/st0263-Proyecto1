@@ -1,17 +1,21 @@
 # -*- coding: utf-8 -*-
+
 from flask import Flask, jsonify, send_file, request
 import os
 import time
-import requests
 import configparser
 import json
 from concurrent import futures
 import threading
-import argparse
+
 
 import grpc
 import dataNode_pb2
 import dataNode_pb2_grpc
+
+# Upload/Download methods
+import dfs_pb2
+import dfs_pb2_grpc
 
 app = Flask(__name__)
 
@@ -86,83 +90,78 @@ def stock_report():
     return send_file("./inventory/inventory.json", as_attachment=True)
 
 # -- METODOS DE FAILBACK Y FAILOVER DEL NAMENODE
-
 @app.route('/change_namenode', methods=['POST'])
 def change_namenode():
     data = request.json
     newLeader_ip = data.get('newLeader_ip')
     newLeader_port = data.get('newLeader_port')
 
-    # actualizando las variables del namenode
+    # Aquí realizar la lógica para actualizar los datos del NameNode
+    # Por ejemplo, actualizar las variables de configuración con los nuevos valores
     nn_ip = newLeader_ip
     nn_port = newLeader_port
     nameNode_dir = f"{nn_ip}:{nn_port}"
 
     # Devolver una respuesta
-    return jsonify({"message": "NameNode líder actualizado exitosamente"}), 200
+    return jsonify({"message": "NameNode líder actualizado exitosamente."}), 200
 
 # METODOS GPRC
 
 # --- gprc logic ---
 
 # Implementación de los métodos gRPC
-class DataNodeServicer(dataNode_pb2_grpc.DataNodeServicer):
-
+class IOFileServicer(dfs_pb2_grpc.IOFileServicer):
     # Método para descargar un bloque de archivo
-    def download_block(self, request, context):
+    def GetFile(self, request, context):
         file_name = request.file_name
         block_name = request.block_name
         file_path = os.path.join(files_folder, file_name, block_name)
         if not os.path.exists(file_path):
             context.set_code(grpc.StatusCode.NOT_FOUND)
             context.set_details("Block not found")
-            return dataNode_pb2.DownloadBlockResponse()
-        with open(file_path, "rb") as file:
+            return dfs_pb2.FileResponse()
+        with open(file_path, "r") as file:
             block_data = file.read()
-        return dataNode_pb2.DownloadBlockResponse(block_data=block_data)
-
+        return dfs_pb2.FileResponse(block_data=block_data)
+    
     # Método para cargar un nuevo bloque de archivo
-    def upload_block(self, request, context):
+    def SendFileInfo(self, request, context):
         file_name = request.file_name
         block_name = request.block_name
         block_data = request.block_data
+        
         folder_path = os.path.join(files_folder, file_name)
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
         block_path = os.path.join(folder_path, block_name)
-        with open(block_path, "wb") as file:
+        file_name = request.block_name
+        with open(block_path, "w") as file:
             file.write(block_data)
-        return dataNode_pb2.UploadBlockResponse(message="Block uploaded successfully")
+        return dfs_pb2.FileInfoResponse(status="File information received successfully.")
 
 # Configuración y ejecución del servidor gRPC
-def serve():
+def serve_grpc():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    dataNode_pb2_grpc.add_DataNodeServiceServicer_to_server(DataNodeServicer(), server)
+    dfs_pb2_grpc.add_IOFileServicer_to_server(IOFileServicer(), server)
     server.add_insecure_port('[::]:50051')
     server.start()
     server.wait_for_termination()
 
-# --- main ----
+# Configuración y ejecución del servidor REST
+def serve_rest_api(host, port):
+    print(f"Starting REST API server on {host}:{port}...")
+    app.run(host=host, debug=False, port=int(port))
 
+# --- main ----
+'''
 def run_grpc_server():
     print("Starting gRPC server...")
     serve()
+'''
 
-def run_rest_api_server(host, port):
-    print(f"Starting REST API server on {host}:{port}...")
-    app.run(host=host, debug=False, port=int(port))   
 
 # LOOP PRINCIPAL
 if __name__ == '__main__':
-
-    # Argumentos de línea de comandos
-    # por ejemplo: python namenode.py --host 192.168.1.100 --port 8080 --is_leader False
-    parser = argparse.ArgumentParser(description='Start the NameNode.')
-    parser.add_argument('--host', default=None, help='Host of the NameNode')
-    parser.add_argument('--port', default=None, help='Port of the NameNode')
-
-    args = parser.parse_args()
-
     config = configparser.ConfigParser()
     config.read('../config.ini')
     id = config['DataNode']['id']
@@ -180,17 +179,24 @@ if __name__ == '__main__':
     nameNode_dir = f"{nn_ip}:{nn_port}"
 
     # config dataNode dir
-    dataNode_dir = f"{host}:{port}"  
+    dataNode_dir = f"{host}:{port}"
+    
     
     app.start_time = time.time()
+    print("DataNode running via gRPC")
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    dfs_pb2_grpc.add_IOFileServicer_to_server(IOFileServicer(), server)
+    server.add_insecure_port('[::]:50051')
+    server.start()
+    server.wait_for_termination()
+    #grpc_thread = threading.Thread(target=serve_grpc)
+    #rest_api_thread = threading.Thread(target=serve_rest_api, args=(host, port))
 
-    # Actualizar los valores si se proporcionan argumentos en la línea de comandos
-    if args.host:
-        ip = args.host
-    if args.port:
-        port = args.port
+    #grpc_thread.start()
+    #rest_api_thread.start()
 
-    my_dir = f"{ip}:{port}"
+    #grpc_thread.join()
+    #rest_api_thread.join()
 
     #rest_api_thread = threading.Thread(target=run_rest_api_server, args=(host, port))
     #grpc_thread = threading.Thread(target=run_grpc_server)
@@ -202,7 +208,6 @@ if __name__ == '__main__':
     #rest_api_thread.join()
     #grpc_thread.join()
 
-
-    print("Yo voy a correr en: ",dataNode_dir)
-    app.run(host=host, debug=True, port=int(port))
+    #print("app run")
+    #app.run(host=host, debug=True, port=int(port))
 

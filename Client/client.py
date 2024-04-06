@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify
 import json
 import configparser
 import bcrypt
@@ -9,10 +9,8 @@ import sys
 import socket
 import grpc
 import requests
-import threading
-import argparse
+import configparser
 
-import grpc
 import dataNode_pb2
 import dataNode_pb2_grpc
 
@@ -41,7 +39,6 @@ app = Flask(__name__)
 
 # --- METODOS DE APOYO / HELPERS
 
-# corta un archivo en bloques
 def split_file_into_blocks(input_file, output_directory):
     print("Time to divide this file in chunks")
     if not os.path.exists(output_directory):
@@ -68,7 +65,7 @@ def split_file_into_blocks(input_file, output_directory):
             block_number += 1
     return block_number
 
-#combina los bloques en 1 archivo.
+
 def merge_blocks_into_file(blocks_directory, output_file):
     print("Time to put back together the chunks")
     with open(output_file, 'wb') as output:
@@ -139,12 +136,12 @@ def request_file(file_name):
         print("Bloques del archivo solicitado:")
         for block in data:
             print(f"Nombre del bloque: {block['block_name']}, URL del bloque: {block['block_url']}")
+        return data
     else:
         print("Error al obtener los bloques del archivo:", response.text)
 
 
 # METODOS DE ESCRITURA DE ARCHIVOS
-        
 # Método para enviar la solicitud de asignación de bloques al servidor principal
 def write_file(file_name, num_blocks):
     # Construir el JSON con los datos del archivo y el número de bloques
@@ -169,8 +166,6 @@ def write_file(file_name, num_blocks):
         print("Error al obtener las asignaciones de bloques:", response.text)
 
 # --- METODOS DE FAILBACK Y FAILOVER DEL NAMENODE
-
-# recibe la solicitud de cambiar el namenode al reemplazo (failover)       
 @app.route('/change_namenode', methods=['POST'])
 def change_namenode():
     data = request.json
@@ -221,21 +216,9 @@ def upload_block(file_name, block_name):
         # Procesar la respuesta
         print(response.message)
 
-       
-    
-
 # --- LOOP PRINCIPAL
 
 if __name__ == '__main__':
-
-    # Argumentos de línea de comandos
-    # por ejemplo: python namenode.py --host 192.168.1.100 --port 8080 --is_leader False
-    parser = argparse.ArgumentParser(description='Start the NameNode.')
-    parser.add_argument('--host', default=None, help='Host of the NameNode')
-    parser.add_argument('--port', default=None, help='Port of the NameNode')
-    
-    args = parser.parse_args()
-
     config = configparser.ConfigParser()
     config.read('../config.ini')
 
@@ -255,14 +238,52 @@ if __name__ == '__main__':
 
     nameNode_dir = f"{nn_ip}:{nn_port}"
 
-    # Actualizar los valores si se proporcionan argumentos en la línea de comandos
-    if args.host:
-        ip = args.host
-    if args.port:
-        port = args.port
+    print("Bienvenido al cliente CLI para el sistema de archivos distribuidos")
+    print("1. Login")
+    print("2. Registro")
+    choice = input("R: ")
+    if choice == 1:
+        username = input("Ingresa tu usuario: ")
+        password = input("Ingresa tu clave: ")
+        register_user(username, password, nn_ip, nn_port)
+    elif choice == 2:
+        username = input("Ingresa tu usuario: ")
+        password = input("Ingresa tu clave: ")
+        client_dir = input("Ingresa tu IP: ")
+        register_user(username, password, client_dir, nn_ip, nn_port)
+    
+    # Menu
+    while True:
+        print("1. Ver catalogo")
+        print("2. Descargar un archivo")
+        print("3. Subir un archivo")
+        print("4. Logout")
+        print("0. Salir")
+        choice_menu = input("R: ")
+        if choice_menu == 1:
+            print("Obteniendo catalogo...")
+            request_catalog()
+        elif choice_menu == 2:
+            file_name = input("Ingresa el nombre del archivo que deseas descargar: ")
+            data = request_file(file_name)
+            for block in data:
+                download_block(file_name, block['block_name'])
+        elif choice_menu == 3:
+            input_file = input("Ingresa el nombre del archivo: ")
+            output_directory = input("Ingrese el nombre de la carpeta donde se guardaran los bloques: ")
+            num_blocks = split_file_into_blocks(input_file, output_directory)
+            write_file(input_file, num_blocks)
+            for block in num_blocks:
+                upload_block(input_file, f"block_{block}")
+        elif choice_menu == 4:
+            print("Cerrando sesion...")
+            logout(client_dir, nn_ip, nn_port)
+        elif choice_menu == 0:
+            print("Saliendo del cliente...")
+            break
 
-    my_dir = f"{ip}:{port}"
 
+    '''
     #Prueba de cortar y descortar los archivos txt
     num_blocks = split_file_into_blocks("./local_files/LoremIpsum.txt", block_output)
     merge_blocks_into_file("./block_output/LoremIpsum", "./downloaded_files/LoremIpsum1.txt")
@@ -285,6 +306,7 @@ if __name__ == '__main__':
     # Solicitar información sobre un archivo específico (reemplaza 'nombre_del_archivo' con el nombre real del archivo)
     request_file('loremIpsum.txt')
 
+    # ---
     #test de escritura
     #write_file("test_file_99.txt", num_blocks)
     #print("grpc read test")
@@ -294,8 +316,4 @@ if __name__ == '__main__':
     #upload_block('example.txt', 'block2')
     # Llamar al método create_chunk
 
-    print(f"Yo voy a correr en {ip} y {port}")
-    app.run(host=ip, debug=True, port=int(port))
-
-
-
+    #app.run(host=ip, debug=True, port=int(port))'''
