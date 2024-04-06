@@ -87,21 +87,33 @@ Si ya existe la carpeta con el filename del archivo mete el nuevo bloque ahi, si
 
 el archivo asociado debera llamarse dataNode.proto
 
-
 # API REST METHODS
 
-El resto de la comunicacion es API REST
+El resto de la comunicacion es API REST, metodos como:
 
-# CONFIGS
+-Login
+-Logout
+-RegisterUser
+-DeleteUser
+-Ping
+-GetInventory
+-GetFileBlocks
+-AllocateBlocks
+-RegisterDataNode
+-RegisterNameNode
+
+# NOTAS DE DISEÑO Y CONFIGURACIÓN
+
+## Configs
 
 Puse un config global por fuera para no estar revisando en cual puerto esta corriendo que cosa, se le puede poner que haga override si al ejecutar el comando de inicio se ingresa un ip/puerto diferentes para poder correr por ejemplo varios datanodes en 1 maquina.
 
-# Threading
+## Threading
 
 Para que Flask y gRPC corran a la vez debe estar debug en false, o si no no se pueden mezclar. 
 
 
-# Sobre el NameNode
+## Sobre el NameNode
 
 Por ahora no esta checkeando el login, pero antes de hacer una consulta en el archivo final debo verificar que desde la ip que se hace la consulta de inventario o getfile sea una ip en logged_peers.json
 
@@ -121,5 +133,13 @@ Pero ese dato no se actualiza y se puede usar para comparar si alguna discrepanc
 
 Podria ser mas eficiente, si, pero por ahora esta asi.
 
-
 !!! Falta verificar si se esta actualizando bien el nuevo espacio disponible en cada nodo con el checkHealthReport!!!
+
+# Orden en que se deberian poner a correr las piezas para un correcto funcionamiento:
+
+1. NameNode principal
+2. NameNode secundario
+3. DataNode 1
+4. DataNode 2
+5. DataNode 3
+6. Client
