@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 import json
 import configparser
 import bcrypt
@@ -9,7 +9,8 @@ import sys
 import socket
 import grpc
 import requests
-import configparser
+import threading
+import argparse
 
 import grpc
 import dataNode_pb2
@@ -40,6 +41,7 @@ app = Flask(__name__)
 
 # --- METODOS DE APOYO / HELPERS
 
+# corta un archivo en bloques
 def split_file_into_blocks(input_file, output_directory):
     print("Time to divide this file in chunks")
     if not os.path.exists(output_directory):
@@ -66,7 +68,7 @@ def split_file_into_blocks(input_file, output_directory):
             block_number += 1
     return block_number
 
-
+#combina los bloques en 1 archivo.
 def merge_blocks_into_file(blocks_directory, output_file):
     print("Time to put back together the chunks")
     with open(output_file, 'wb') as output:
@@ -167,7 +169,8 @@ def write_file(file_name, num_blocks):
         print("Error al obtener las asignaciones de bloques:", response.text)
 
 # --- METODOS DE FAILBACK Y FAILOVER DEL NAMENODE
-        
+
+# recibe la solicitud de cambiar el namenode al reemplazo (failover)       
 @app.route('/change_namenode', methods=['POST'])
 def change_namenode():
     data = request.json
@@ -224,6 +227,16 @@ def upload_block(file_name, block_name):
 # --- LOOP PRINCIPAL
 
 if __name__ == '__main__':
+
+    # Argumentos de línea de comandos
+    # por ejemplo: python namenode.py --host 192.168.1.100 --port 8080 --is_leader False
+    parser = argparse.ArgumentParser(description='Start the NameNode.')
+    parser.add_argument('--host', default=None, help='Host of the NameNode')
+    parser.add_argument('--port', default=None, help='Port of the NameNode')
+    parser.add_argument('--is_leader', default=None, help='Whether the NameNode is the leader or not')
+    
+    args = parser.parse_args()
+
     config = configparser.ConfigParser()
     config.read('../config.ini')
 
@@ -243,6 +256,15 @@ if __name__ == '__main__':
 
     nameNode_dir = f"{nn_ip}:{nn_port}"
 
+    # Actualizar los valores si se proporcionan argumentos en la línea de comandos
+    if args.host:
+        ip = args.host
+    if args.port:
+        port = args.port
+    if args.is_leader:
+        is_leader = args.is_leader.lower() == 'true'
+
+    my_dir = f"{ip}:{port}"
 
     #Prueba de cortar y descortar los archivos txt
     num_blocks = split_file_into_blocks("./local_files/LoremIpsum.txt", block_output)
@@ -266,7 +288,6 @@ if __name__ == '__main__':
     # Solicitar información sobre un archivo específico (reemplaza 'nombre_del_archivo' con el nombre real del archivo)
     request_file('loremIpsum.txt')
 
-    # ---
     #test de escritura
     #write_file("test_file_99.txt", num_blocks)
     #print("grpc read test")
@@ -276,6 +297,8 @@ if __name__ == '__main__':
     #upload_block('example.txt', 'block2')
     # Llamar al método create_chunk
 
-    #app.run(host=ip, debug=True, port=int(port))
+    print(f"Yo voy a correr en {ip} y {port}")
+    app.run(host=ip, debug=True, port=int(port))
+
 
 

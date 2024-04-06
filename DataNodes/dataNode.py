@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 from flask import Flask, jsonify, send_file, request
 import os
 import time
@@ -7,7 +6,6 @@ import configparser
 import json
 from concurrent import futures
 import threading
-
 
 import grpc
 import dataNode_pb2
@@ -93,14 +91,13 @@ def change_namenode():
     newLeader_ip = data.get('newLeader_ip')
     newLeader_port = data.get('newLeader_port')
 
-    # Aquí realizar la lógica para actualizar los datos del NameNode
-    # Por ejemplo, actualizar las variables de configuración con los nuevos valores
+    # actualizando las variables del namenode
     nn_ip = newLeader_ip
     nn_port = newLeader_port
     nameNode_dir = f"{nn_ip}:{nn_port}"
 
     # Devolver una respuesta
-    return jsonify({"message": "NameNode líder actualizado exitosamente."}), 200
+    return jsonify({"message": "NameNode líder actualizado exitosamente"}), 200
 
 # METODOS GPRC
 
@@ -155,6 +152,16 @@ def run_rest_api_server(host, port):
 
 # LOOP PRINCIPAL
 if __name__ == '__main__':
+
+    # Argumentos de línea de comandos
+    # por ejemplo: python namenode.py --host 192.168.1.100 --port 8080 --is_leader False
+    parser = argparse.ArgumentParser(description='Start the NameNode.')
+    parser.add_argument('--host', default=None, help='Host of the NameNode')
+    parser.add_argument('--port', default=None, help='Port of the NameNode')
+    parser.add_argument('--is_leader', default=None, help='Whether the NameNode is the leader or not')
+
+    args = parser.parse_args()
+
     config = configparser.ConfigParser()
     config.read('../config.ini')
     id = config['DataNode']['id']
@@ -172,11 +179,19 @@ if __name__ == '__main__':
     nameNode_dir = f"{nn_ip}:{nn_port}"
 
     # config dataNode dir
-    dataNode_dir = f"{host}:{port}"
-    
+    dataNode_dir = f"{host}:{port}"  
     
     app.start_time = time.time()
 
+    # Actualizar los valores si se proporcionan argumentos en la línea de comandos
+    if args.host:
+        ip = args.host
+    if args.port:
+        port = args.port
+    if args.is_leader:
+        is_leader = args.is_leader.lower() == 'true'
+
+    my_dir = f"{ip}:{port}"
 
     #rest_api_thread = threading.Thread(target=run_rest_api_server, args=(host, port))
     #grpc_thread = threading.Thread(target=run_grpc_server)
@@ -188,6 +203,7 @@ if __name__ == '__main__':
     #rest_api_thread.join()
     #grpc_thread.join()
 
-    print("app run")
+
+    print("Yo voy a correr en: ",dataNode_dir)
     app.run(host=host, debug=True, port=int(port))
 

@@ -10,7 +10,6 @@ import os
 import threading
 import argparse
 
-
 import socket
 
 app = Flask(__name__)
@@ -714,7 +713,6 @@ if __name__ == '__main__':
 
     app.start_time = time.time()
 
-
     # Actualizar los valores si se proporcionan argumentos en la línea de comandos
     if args.host:
         ip = args.host
@@ -725,7 +723,6 @@ if __name__ == '__main__':
 
     my_dir = f"{ip}:{port}"
     
-
     if (is_leader):
         # Inicia la verificación de la salud del datanode en un hilo separado
         print("Soy un NameNode leader, checkeo que mis followers sigan vivos.")
