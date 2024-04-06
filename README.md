@@ -121,10 +121,6 @@ Ya tiene los metodos de consulta y de agregar archivos, le devuelve en que 2 nod
 
 Correrlo con parametros custom o como follower. 
 
-```python
-python3 namenode.py --host 127.0.0.1 --port 8080 --is_leader False
-```
-
 # Decisiones de diseño
 
 Por ahora cuando se inscribe el dataNode de manera inicial se guarda en el csv de registered_datanodes el espacio total y el disponible por si por algun motivo hay menos espacio disponible alla. 
@@ -143,3 +139,17 @@ Podria ser mas eficiente, si, pero por ahora esta asi.
 4. DataNode 2
 5. DataNode 3
 6. Client
+
+# Comandos relevantes
+
+Para correr el codigo en orden, por ejemplo
+
+```python
+python3 namenode.py
+python3 namenode.py --host 127.0.0.1 --port 5001 --is_leader False
+python3 datanode.py
+python3 datanode.py --host 127.0.0.1 --port 6001
+python3 datanode.py --host 127.0.0.1 --port 6002
+python3 client.py 
+python3 client.py --host 127.0.0.1 --port 5501
+```

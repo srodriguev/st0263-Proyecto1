@@ -2,10 +2,12 @@
 from flask import Flask, jsonify, send_file, request
 import os
 import time
+import requests
 import configparser
 import json
 from concurrent import futures
 import threading
+import argparse
 
 import grpc
 import dataNode_pb2
@@ -158,7 +160,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Start the NameNode.')
     parser.add_argument('--host', default=None, help='Host of the NameNode')
     parser.add_argument('--port', default=None, help='Port of the NameNode')
-    parser.add_argument('--is_leader', default=None, help='Whether the NameNode is the leader or not')
 
     args = parser.parse_args()
 
@@ -188,8 +189,6 @@ if __name__ == '__main__':
         ip = args.host
     if args.port:
         port = args.port
-    if args.is_leader:
-        is_leader = args.is_leader.lower() == 'true'
 
     my_dir = f"{ip}:{port}"
 
