@@ -2,40 +2,19 @@
 
 from flask import Flask, request, jsonify, send_file
 import json
-import configparser
-import bcrypt
 import os
 import sys
+import bcrypt
 import socket
-import grpc
 import requests
 import threading
 import argparse
+import configparser
 
 import grpc
 import dataNode_pb2
 import dataNode_pb2_grpc
 
-
-'''
-# Obtiene la ruta del directorio raíz del proyecto
-root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-# Añade la ruta del directorio Helpers al sys.path
-helpers_dir = os.path.join(root_dir, 'Helpers')
-sys.path.append(helpers_dir)
-
-# Imprime información de depuración
-print("Ruta del directorio raíz:", root_dir)
-print("Ruta del directorio Helpers:", helpers_dir)
-print("sys.path:", sys.path)
-
-# Intenta importar la función split_file_into_blocks desde fileSplitter
-try:
-    from Helpers.fileSplitter import split_file_into_blocks
-except ModuleNotFoundError as e:
-    print("Error al importar fileSplitter:", e)
-'''
 
 app = Flask(__name__)
 
@@ -220,13 +199,63 @@ def upload_block(file_name, block_name):
         response = stub.UploadBlock(request)
         # Procesar la respuesta
         print(response.message)
-
        
     
 
 # --- LOOP PRINCIPAL
 
+
+def main_menu():
+    print("Bienvenido al cliente CLI para el sistema de archivos distribuidos")
+    print("1. Login")
+    print("2. Registro")
+    choice = input("R: ")
+    if choice == '1':
+        username = input("Ingresa tu usuario: ")
+        password = input("Ingresa tu clave: ")
+        register_user(username, password, nn_ip, nn_port)
+    elif choice == '2':
+        username = input("Ingresa tu usuario: ")
+        password = input("Ingresa tu clave: ")
+        client_dir = input("Ingresa tu IP: ")
+        register_user(username, password, client_dir, nn_ip, nn_port)
+    
+    # Menú
+    while True:
+        print("1. Ver catálogo")
+        print("2. Descargar un archivo")
+        print("3. Subir un archivo")
+        print("4. Logout")
+        print("0. Salir")
+        choice_menu = input("R: ")
+        if choice_menu == '1':
+            print("Obteniendo catálogo...")
+            request_catalog()
+        elif choice_menu == '2':
+            file_name = input("Ingresa el nombre del archivo que deseas descargar: ")
+            data = request_file(file_name)
+            for block in data:
+                download_block(file_name, block['block_name'])
+        elif choice_menu == '3':
+            input_file = input("Ingresa el nombre del archivo: ")
+            output_directory = input("Ingrese el nombre de la carpeta donde se guardarán los bloques: ")
+            num_blocks = split_file_into_blocks(input_file, output_directory)
+            write_file(input_file, num_blocks)
+            for block in num_blocks:
+                upload_block(input_file, f"block_{block}")
+        elif choice_menu == '4':
+            print("Cerrando sesión...")
+            logout(client_dir, nn_ip, nn_port)
+        elif choice_menu == '0':
+            print("Saliendo del cliente...")
+            break
+
+def run_flask():
+    print(f"Yo (este proceso client) voy a correr en {ip} y {port}")
+    app.run(host=ip, debug=False, port=int(port))
+
 if __name__ == '__main__':
+    #config inicial
 
     # Argumentos de línea de comandos
     # por ejemplo: python namenode.py --host 192.168.1.100 --port 8080 --is_leader False
@@ -262,6 +291,21 @@ if __name__ == '__main__':
         port = args.port
 
     my_dir = f"{ip}:{port}"
+
+
+    #main menu
+
+    # Iniciar los hilos para ejecutar el menú y el servidor Flask simultáneamente
+    menu_thread = threading.Thread(target=main_menu)
+    flask_thread = threading.Thread(target=run_flask)
+
+    menu_thread.start()  # Iniciar el hilo para el menú
+    flask_thread.start()  # Iniciar el hilo para el servidor Flask
+
+    flask_thread.join()  # Esperar a que el hilo del servidor Flask termine (no debería terminar)
+    menu_thread.join()  # Esperar a que el hilo del menú termine (no debería terminar)   
+
+    #testing
 
     #Prueba de cortar y descortar los archivos txt
     num_blocks = split_file_into_blocks("./local_files/LoremIpsum.txt", block_output)
