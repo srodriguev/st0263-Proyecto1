@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 from flask import Flask, request, jsonify, send_file
 import json
+import csv
 import requests
 import configparser
 import bcrypt
-import csv
 import time
 import os
 import threading
@@ -549,6 +549,7 @@ def check_leader_nn_status():
         if ping_leader(leader_ip, leader_port):
             print('Ping al líder exitoso')
             failback_counter = 0
+            updateAllfiles()
         else:
             print('Ping al líder fallido')
             failback_counter += 1
@@ -667,6 +668,257 @@ def register_nn():
         return jsonify({"error": "Se requieren las direcciones IP, de puerto y el tiempo de uptime del NameNode Follower."}), 400
 
 
+# -- METODOS PARA ACTUALIZAR LOS ARCHIVOS DEL NAMENODE FOLLOWER SEGUN EL LIDER
+
+# metodos en el lider.
+
+def csv_to_json(csv_file):
+    reader = csv.DictReader(csv_file)
+    json_data = [row for row in reader]
+    return json_data
+
+def json_to_csv(json_data, csv_file):
+    # Extraer las claves del primer diccionario para usarlas como encabezados del CSV
+    fieldnames = json_data[0].keys()
+
+    # Abrir el archivo CSV en modo escritura
+    with open(csv_file, 'w', newline='') as file:
+        # Crear un escritor de CSV utilizando los encabezados extraídos
+        writer = csv.DictWriter(file, fieldnames=fieldnames)
+
+        # Escribir los encabezados en el archivo CSV
+        writer.writeheader()
+
+        # Escribir cada fila del JSON en el archivo CSV
+        for row in json_data:
+            writer.writerow(row)
+    
+
+# Método para obtener el contenido del archivo de clientes registrados
+@app.route('/get_registered_clients')
+def get_registered_clients():
+    try:
+        with open(registered_peers_file, 'r') as file:
+            data = json.load(file)
+        return jsonify(data)
+    except FileNotFoundError:
+        return jsonify({"error": "Archivo de clientes registrados no encontrado"})
+
+# Método para obtener el contenido del archivo de clientes conectados
+@app.route('/get_logged_clients')
+def get_logged_clients():
+    try:
+        with open(logged_peers_file, 'r') as file:
+            data = json.load(file)
+        return jsonify(data)
+    except FileNotFoundError:
+        return jsonify({"error": "Archivo de clientes conectados no encontrado"})
+
+# Método para obtener el contenido del archivo de datanodes registrados
+@app.route('/get_registered_datanodes')
+def get_registered_datanodes():
+    try:
+        with open(registered_datanodes_file, 'r') as file:
+            # Implementa la lógica para leer el archivo CSV y convertirlo a JSON si es necesario
+            # Ejemplo:
+            data = csv_to_json(file)
+            pass
+        return jsonify(data)
+    except FileNotFoundError:
+        return jsonify({"error": "Archivo de datanodes registrados no encontrado"})
+
+# Método para obtener el contenido del archivo de datanodes activos
+@app.route('/get_active_datanodes')
+def get_active_datanodes():
+    try:
+        with open(active_datanodes_file, 'r') as file:
+            # Implementa la lógica para leer el archivo CSV y convertirlo a JSON si es necesario
+            # Ejemplo:
+            data = csv_to_json(file)
+            pass
+        return jsonify(data)
+    except FileNotFoundError:
+        return jsonify({"error": "Archivo de datanodes activos no encontrado"})
+
+# Método para obtener el contenido del archivo de namenodes registrados
+@app.route('/get_registered_namenodes')
+def get_registered_namenodes():
+    try:
+        with open(registered_namenodes_file, 'r') as file:
+            # Implementa la lógica para leer el archivo CSV y convertirlo a JSON si es necesario
+            # Ejemplo:
+            data = csv_to_json(file)
+            pass
+        return jsonify(data)
+    except FileNotFoundError:
+        return jsonify({"error": "Archivo de namenodes registrados no encontrado"})
+
+# Método para obtener el contenido del archivo de namenodes activos
+@app.route('/get_active_namenodes')
+def get_active_namenodes():
+    try:
+        with open(active_namenodes_file, 'r') as file:
+            # Implementa la lógica para leer el archivo CSV y convertirlo a JSON si es necesario
+            # Ejemplo:
+            data = csv_to_json(file)
+            pass
+        return jsonify(data)
+    except FileNotFoundError:
+        return jsonify({"error": "Archivo de namenodes activos no encontrado"})
+
+# ---
+
+# - metodos desde el follower para hacer los reemplazos
+
+def update_registered_clients_file(leader_ip, leader_port):
+    try:
+        # Realizar solicitud al Namenode líder
+        response = requests.get(f"http://{leader_ip}:{leader_port}/get_registered_clients")
+        
+        # Verificar si la solicitud fue exitosa (código de estado 200)
+        if response.status_code == 200:
+            # Leer el contenido de la respuesta como JSON
+            data = response.json()
+            
+            # Abrir el archivo local en modo escritura y escribir el contenido recibido
+            with open('registered_clients.json', 'w') as file:
+                json.dump(data, file, indent=2)
+                
+            print("Archivo de clientes registrados actualizado correctamente.")
+        else:
+            print("Error al obtener el archivo de clientes registrados del líder.")
+    except Exception as e:
+        print(f"Error al realizar la solicitud al líder: {e}")
+
+
+def update_logged_clients_file(leader_ip, leader_port):
+    try:
+        # Realizar solicitud al Namenode líder
+        response = requests.get(f"http://{leader_ip}:{leader_port}/get_logged_clients")
+        
+        # Verificar si la solicitud fue exitosa (código de estado 200)
+        if response.status_code == 200:
+            # Leer el contenido de la respuesta como JSON
+            data = response.json()
+            
+            # Abrir el archivo local en modo escritura y escribir el contenido recibido
+            with open('logged_clients.json', 'w') as file:
+                json.dump(data, file, indent=2)
+                
+            print("Archivo de clientes conectados actualizado correctamente.")
+        else:
+            print("Error al obtener el archivo de clientes conectados del líder.")
+    except Exception as e:
+        print(f"Error al realizar la solicitud al líder: {e}")
+
+def update_registered_datanodes_file(leader_ip, leader_port):
+    try:
+        # Realizar solicitud al Namenode líder
+        response = requests.get(f"http://{leader_ip}:{leader_port}/get_registered_datanodes")
+        
+        # Verificar si la solicitud fue exitosa (código de estado 200)
+        if response.status_code == 200:
+            # Leer el contenido de la respuesta como JSON
+            data = response.json()
+            
+            # Abrir el archivo local en modo escritura y escribir el contenido recibido
+            with open('registered_datanodes.csv', 'w', newline='') as file:
+                # Crear un escritor de CSV
+                writer = csv.DictWriter(file, fieldnames=data[0].keys())
+                
+                # Escribir los encabezados del CSV
+                writer.writeheader()
+                
+                # Escribir cada fila de datos en el archivo CSV
+                for row in data:
+                    writer.writerow(row)
+                
+            print("Archivo de datanodes registrados actualizado correctamente.")
+        else:
+            print("Error al obtener el archivo de datanodes registrados del líder.")
+    except Exception as e:
+        print(f"Error al realizar la solicitud al líder: {e}")
+
+def get_active_datanodes(leader_ip, leader_port):
+    try:
+        response = requests.get(f"http://{leader_ip}:{leader_port}/get_active_datanodes")
+        if response.status_code == 200:
+            data = response.json()
+            with open('active_datanodes.csv', 'w', newline='') as file:
+                writer = csv.DictWriter(file, fieldnames=data[0].keys())
+                writer.writeheader()
+                for row in data:
+                    writer.writerow(row)
+            print("Archivo de datanodes activos actualizado correctamente.")
+        else:
+            print("Error al obtener el archivo de datanodes activos del líder.")
+    except Exception as e:
+        print(f"Error al realizar la solicitud al líder: {e}")
+
+def get_registered_namenodes(leader_ip, leader_port):
+    try:
+        response = requests.get(f"http://{leader_ip}:{leader_port}/get_registered_namenodes")
+        if response.status_code == 200:
+            data = response.json()
+            with open('registered_namenodes.csv', 'w', newline='') as file:
+                writer = csv.DictWriter(file, fieldnames=data[0].keys())
+                writer.writeheader()
+                for row in data:
+                    writer.writerow(row)
+            print("Archivo de namenodes registrados actualizado correctamente.")
+        else:
+            print("Error al obtener el archivo de namenodes registrados del líder.")
+    except Exception as e:
+        print(f"Error al realizar la solicitud al líder: {e}")
+
+def get_active_namenodes(leader_ip, leader_port):
+    try:
+        response = requests.get(f"http://{leader_ip}:{leader_port}/get_active_namenodes")
+        if response.status_code == 200:
+            data = response.json()
+            with open('active_namenodes.csv', 'w', newline='') as file:
+                writer = csv.DictWriter(file, fieldnames=data[0].keys())
+                writer.writeheader()
+                for row in data:
+                    writer.writerow(row)
+            print("Archivo de namenodes activos actualizado correctamente.")
+        else:
+            print("Error al obtener el archivo de namenodes activos del líder.")
+    except Exception as e:
+        print(f"Error al realizar la solicitud al líder: {e}")
+
+def updateAllfiles():
+    try:
+        get_active_namenodes(leader_ip, leader_port)
+    except Exception as e:
+        print("Error al obtener los namenodes activos:", e)
+    
+    try:
+        get_registered_namenodes(leader_ip, leader_port)
+    except Exception as e:
+        print("Error al obtener los namenodes registrados:", e)
+    
+    try:
+        get_active_datanodes(leader_ip, leader_port)
+    except Exception as e:
+        print("Error al obtener los datanodes activos:", e)
+    
+    try:
+        update_registered_datanodes_file(leader_ip, leader_port)
+    except Exception as e:
+        print("Error al actualizar el archivo de datanodes registrados:", e)
+    
+    try:
+        update_logged_clients_file(leader_ip, leader_port)
+    except Exception as e:
+        print("Error al actualizar el archivo de clientes conectados:", e)
+    
+    try:
+        update_registered_clients_file(leader_ip, leader_port)
+    except Exception as e:
+        print("Error al actualizar el archivo de clientes registrados:", e)
+
+
 # --- MAIN LOOP
 # IS LEADER = BOOLEANO SI ES UN NAMENODE LIDER O FOLLOWER
 # LEADER_DIR = SI ES FOLLOWER TOMAR LA DIRECCION DEL LIDER DEL CONFIG.INI
@@ -721,6 +973,7 @@ if __name__ == '__main__':
     if args.is_leader:
         is_leader = args.is_leader.lower() == 'true'
 
+    leader_dir = f"{leader_ip}:{leader_port}"
     my_dir = f"{ip}:{port}"
     
     if (is_leader):
