@@ -12,8 +12,8 @@ import argparse
 import configparser
 
 import grpc
-import dataNode_pb2
-import dataNode_pb2_grpc
+import dfs_pb2
+import dfs_pb2_grpc
 
 
 app = Flask(__name__)
@@ -168,39 +168,55 @@ def change_namenode():
 
 # --- METODOS DE GPRC
 
-def download_block(file_name, block_name):
-    # Establecer conexión con el servidor DataNode
-    with grpc.insecure_channel('127.0.0.1:50051') as channel:
-        # Crear un cliente gRPC
-        stub = dataNode_pb2_grpc.DataNodeServiceStub(channel)
-        # Crear la solicitud de descarga de bloque
-        request = dataNode_pb2.DownloadBlockRequest(file_name=file_name, block_name=block_name)
-        # Llamar al método remoto
-        response = stub.DownloadBlock(request)
-        # Procesar la respuesta
-        if response:
-            with open(os.path.join('downloads', block_name), 'wb') as file:
-                file.write(response.block_data)
-            print(f"Block '{block_name}' downloaded successfully.")
-        else:
-            print(f"Failed to download block '{block_name}'.")
-
-def upload_block(file_name, block_name):
-    # Leer el contenido del bloque a cargar
-    with open(os.path.join('uploads', block_name), 'rb') as file:
-        block_data = file.read()
-    # Establecer conexión con el servidor DataNode
-    with grpc.insecure_channel('127.0.0.1:50051') as channel:
-        # Crear un cliente gRPC
-        stub = dataNode_pb2_grpc.DataNodeServiceStub(channel)
-        # Crear la solicitud de carga de bloque
-        request = dataNode_pb2.UploadBlockRequest(file_name=file_name, block_name=block_name, block_data=block_data)
-        # Llamar al método remoto
+def UploadBlock(file_name, block_name, peer_server_url):
+    # Crea un canal gRPC para la comunicación con el servidor
+    with grpc.insecure_channel(peer_server_url) as channel:
+        # Crea un cliente para el servicio gRPC
+        stub = dfs_pb2_grpc.IOFileServicerStub(channel)
+        
+        # Construye la ruta del bloque
+        block_path = os.path.join(local_files, file_name, block_name)
+        
+        # Verifica si el bloque existe
+        if not os.path.exists(block_path):
+            print("Block not found.")
+            return
+        
+        # Lee los datos del bloque
+        with open(block_path, "rb") as file:
+            block_data = file.read()
+        
+        # Crea una solicitud para cargar un nuevo bloque de archivo
+        request = dfs_pb2.UploadBlockRequest(file_name=file_name, block_name=block_name, block_data=block_data)
+        
+        # Envía la solicitud al servidor gRPC
         response = stub.UploadBlock(request)
-        # Procesar la respuesta
-        print(response.message)
-       
-    
+        
+        # Maneja la respuesta del servidor
+        if response.success:
+            print("Upload successful.")
+        else:
+            print("Upload failed.")
+
+def DownloadBlock(file_name, block_name, datanode_rpc_url):
+    # Crea un canal gRPC para la comunicación con el servidor
+    with grpc.insecure_channel(datanode_rpc_url) as channel:
+        # Crea un cliente para el servicio gRPC
+        stub = dfs_pb2_grpc.IOFileServicerStub(channel)
+        
+        # Crea una solicitud de descarga de un bloque de archivo
+        request = dfs_pb2.DownloadBlockRequest(file_name=file_name, block_name=block_name)
+        
+        # Envía la solicitud al servidor gRPC
+        response = stub.DownloadBlock(request)
+        
+        # Maneja la respuesta del servidor
+        if response.block_data:
+            print("Downloaded data:", response.block_data)
+        else:
+            print("Download failed.")
+
+
 
 # --- LOOP PRINCIPAL
 
@@ -282,6 +298,9 @@ if __name__ == '__main__':
     nn_ip = config['NameNode']['leader_ip']
     nn_port = config['NameNode']['leader_port']
 
+    # config del estandar para los datanodes
+    datanode_port = config ['DataNode']['grpc_port']
+
     nameNode_dir = f"{nn_ip}:{nn_port}"
 
     # Actualizar los valores si se proporcionan argumentos en la línea de comandos
@@ -296,47 +315,49 @@ if __name__ == '__main__':
     #main menu
 
     # Iniciar los hilos para ejecutar el menú y el servidor Flask simultáneamente
-    menu_thread = threading.Thread(target=main_menu)
-    flask_thread = threading.Thread(target=run_flask)
+    #menu_thread = threading.Thread(target=main_menu)
+    #flask_thread = threading.Thread(target=run_flask)
 
-    menu_thread.start()  # Iniciar el hilo para el menú
-    flask_thread.start()  # Iniciar el hilo para el servidor Flask
+    #menu_thread.start()  # Iniciar el hilo para el menú
+    #flask_thread.start()  # Iniciar el hilo para el servidor Flask
 
-    flask_thread.join()  # Esperar a que el hilo del servidor Flask termine (no debería terminar)
-    menu_thread.join()  # Esperar a que el hilo del menú termine (no debería terminar)   
+    #flask_thread.join()  # Esperar a que el hilo del servidor Flask termine (no debería terminar)
+    #menu_thread.join()  # Esperar a que el hilo del menú termine (no debería terminar)   
 
     #testing
 
     #Prueba de cortar y descortar los archivos txt
-    num_blocks = split_file_into_blocks("./local_files/LoremIpsum.txt", block_output)
-    merge_blocks_into_file("./block_output/LoremIpsum", "./downloaded_files/LoremIpsum1.txt")
+    #num_blocks = split_file_into_blocks("./local_files/LoremIpsum.txt", block_output)
+    #merge_blocks_into_file("./block_output/LoremIpsum", "./downloaded_files/LoremIpsum1.txt")
 
     # Llama a la función para registrar un usuario
-    registration_result, status_code = register_user(username, password, client_dir, nn_ip, nn_port)
-    print(f"Registro: {registration_result}, Código de estado: {status_code}")
+    #registration_result, status_code = register_user(username, password, client_dir, nn_ip, nn_port)
+    #print(f"Registro: {registration_result}, Código de estado: {status_code}")
 
     # Llama a la función para iniciar sesión
-    login_result, status_code = login(username, password, nn_ip, nn_port)
-    print(f"Inicio de sesión: {login_result}, Código de estado: {status_code}")
+    #login_result, status_code = login(username, password, nn_ip, nn_port)
+    #print(f"Inicio de sesión: {login_result}, Código de estado: {status_code}")
 
     # Llama a la función para cerrar la sesión
     #logout_result, status_code = logout(nameNode_dir, nn_ip, nn_port)
     #print(f"Cierre de sesión: {logout_result['message']}, Código de estado: {status_code}")
 
     # Solicitar el catálogo
-    request_catalog()
+    #request_catalog()
 
     # Solicitar información sobre un archivo específico (reemplaza 'nombre_del_archivo' con el nombre real del archivo)
-    request_file('loremIpsum.txt')
+    #request_file('loremIpsum.txt')
 
-    #test de escritura
-    #write_file("test_file_99.txt", num_blocks)
-    #print("grpc read test")
-    #download_block('example.txt', 'block1')
-    # Llamar al método read_chunk
-    #print("grpc create test")
-    #upload_block('example.txt', 'block2')
-    # Llamar al método create_chunk
+    """
+    # Ejemplo de uso de grpc
+    blocks_info = [
+        {"block_name": "block1", "block_url": "http://127.0.0.1:6000/files/file_01.txt/chunk1"},
+        {"block_name": "block2", "block_url": "http://127.0.0.1:6000/files/file_01.txt/chunk2"}
+    ]
+
+    UploadBlock("file_01.txt", 'chunk1', "127.0.0.1:50051")
+    DownloadBlock("file_01.txt", 'chunk2', "127.0.0.1:50051")
+    """
 
     print(f"Yo voy a correr en {ip} y {port}")
     app.run(host=ip, debug=True, port=int(port))

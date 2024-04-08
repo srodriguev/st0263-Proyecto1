@@ -10,12 +10,10 @@ import threading
 import argparse
 
 import grpc
-import dataNode_pb2
-import dataNode_pb2_grpc
-
-# Upload/Download methods
 import dfs_pb2
 import dfs_pb2_grpc
+from grpc_reflection.v1alpha import reflection
+
 
 app = Flask(__name__)
 
@@ -112,21 +110,24 @@ def change_namenode():
 # Implementación de los métodos gRPC
 
 class IOFileServicer(dfs_pb2_grpc.IOFileServicer):
+    
     # Método para descargar un bloque de archivo
-    def GetFile(self, request, context):
+    def DownloadBlock(self, request, context):
+        print("Got a download request")
         file_name = request.file_name
         block_name = request.block_name
         file_path = os.path.join(files_folder, file_name, block_name)
         if not os.path.exists(file_path):
             context.set_code(grpc.StatusCode.NOT_FOUND)
             context.set_details("Block not found")
-            return dfs_pb2.FileResponse()
+            return dfs_pb2.DownloadBlockResponse()
         with open(file_path, "r") as file:
             block_data = file.read()
-        return dfs_pb2.FileResponse(block_data=block_data)
+        return dfs_pb2.DownloadBlockResponse(block_data=block_data)
     
     # Método para cargar un nuevo bloque de archivo
-    def SendFileInfo(self, request, context):
+    def UploadBlock(self, request, context):
+        print("Got an upload request")
         file_name = request.file_name
         block_name = request.block_name
         block_data = request.block_data
@@ -138,15 +139,18 @@ class IOFileServicer(dfs_pb2_grpc.IOFileServicer):
         file_name = request.block_name
         with open(block_path, "w") as file:
             file.write(block_data)
-        return dfs_pb2.FileInfoResponse(status="File information received successfully.")
+        return dfs_pb2.UploadBlockResponse(status="File information received successfully.")
+
+
 
 # Configuración y ejecución del servidor gRPC
 def serve_grpc():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    dfs_pb2_grpc.add_IOFileServicer_to_server(IOFileServicer(), server)
+    dfs_pb2_grpc.add_IOFileServicerServicer_to_server(IOFileServicer(), server)
     server.add_insecure_port('[::]:50051')
     server.start()
     server.wait_for_termination()
+
 
 # Configuración y ejecución del servidor REST
 def serve_rest_api(host, port):
@@ -208,7 +212,7 @@ if __name__ == '__main__':
     grpc_thread = threading.Thread(target=run_grpc_server)
     
     rest_api_thread.start()
-    time.sleep(2)  # Asegurarse de que el servidor gRPC se inicie completamente antes de iniciar el servidor REST API
+    time.sleep(2)  # Asegurarse de que el servidor 1 se inicie completamente antes de iniciar el servidor 2
     grpc_thread.start()
 
     rest_api_thread.join()
