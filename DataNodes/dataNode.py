@@ -184,13 +184,9 @@ if __name__ == '__main__':
     
     app.start_time = time.time()
     print("DataNode running via gRPC")
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    dfs_pb2_grpc.add_IOFileServicer_to_server(IOFileServicer(), server)
-    server.add_insecure_port('[::]:50051')
-    server.start()
-    server.wait_for_termination()
-    #grpc_thread = threading.Thread(target=serve_grpc)
-    #rest_api_thread = threading.Thread(target=serve_rest_api, args=(host, port))
+    
+    grpc_thread = threading.Thread(target=serve_grpc)
+    rest_api_thread = threading.Thread(target=serve_rest_api, args=(host, port))
 
     #grpc_thread.start()
     #rest_api_thread.start()
@@ -201,12 +197,12 @@ if __name__ == '__main__':
     #rest_api_thread = threading.Thread(target=run_rest_api_server, args=(host, port))
     #grpc_thread = threading.Thread(target=run_grpc_server)
     
-    #rest_api_thread.start()
-    #time.sleep(2)  # Asegurarse de que el servidor gRPC se inicie completamente antes de iniciar el servidor REST API
-    #grpc_thread.start()
+    rest_api_thread.start()
+    time.sleep(2)  # Asegurarse de que el servidor gRPC se inicie completamente antes de iniciar el servidor REST API
+    grpc_thread.start()
 
-    #rest_api_thread.join()
-    #grpc_thread.join()
+    rest_api_thread.join()
+    grpc_thread.join()
 
     #print("app run")
     #app.run(host=host, debug=True, port=int(port))

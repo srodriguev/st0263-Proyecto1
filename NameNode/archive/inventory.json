@@ -5,7 +5,7 @@
             "status": "offline",
             "uptime": 3600,
             "total_space": "50000000",
-            "available_space": 49999994.0,
+            "available_space": 49995898.0,
             "files": [
                 {
                     "name": "loremIpsum.txt",

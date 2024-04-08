@@ -14,6 +14,8 @@ import configparser
 import dataNode_pb2
 import dataNode_pb2_grpc
 
+import dfs_pb2_grpc
+import dfs_pb2
 
 '''
 # Obtiene la ruta del directorio raíz del proyecto
@@ -188,11 +190,11 @@ def download_block(file_name, block_name):
     # Establecer conexión con el servidor DataNode
     with grpc.insecure_channel('127.0.0.1:50051') as channel:
         # Crear un cliente gRPC
-        stub = dataNode_pb2_grpc.DataNodeServiceStub(channel)
+        stub = dfs_pb2_grpc.IOFileStub(channel)
         # Crear la solicitud de descarga de bloque
-        request = dataNode_pb2.DownloadBlockRequest(file_name=file_name, block_name=block_name)
+        request = dfs_pb2.FileRequest(file_name=file_name, block_name=block_name)
         # Llamar al método remoto
-        response = stub.DownloadBlock(request)
+        response = stub.GetFile(request)
         # Procesar la respuesta
         if response:
             with open(os.path.join('downloads', block_name), 'wb') as file:
@@ -203,16 +205,16 @@ def download_block(file_name, block_name):
 
 def upload_block(file_name, block_name):
     # Leer el contenido del bloque a cargar
-    with open(os.path.join('uploads', block_name), 'rb') as file:
+    with open(os.path.join('block_output/hola/', block_name), 'rb') as file:
         block_data = file.read()
     # Establecer conexión con el servidor DataNode
     with grpc.insecure_channel('127.0.0.1:50051') as channel:
         # Crear un cliente gRPC
-        stub = dataNode_pb2_grpc.DataNodeServiceStub(channel)
+        stub = dfs_pb2_grpc.IOFileStub(channel)
         # Crear la solicitud de carga de bloque
-        request = dataNode_pb2.UploadBlockRequest(file_name=file_name, block_name=block_name, block_data=block_data)
+        request = dfs_pb2.FileInfoRequest(file_name=file_name, block_name=block_name, block_data=block_data)
         # Llamar al método remoto
-        response = stub.UploadBlock(request)
+        response = stub.SendFileInfo(request)
         # Procesar la respuesta
         print(response.message)
 
@@ -238,7 +240,7 @@ if __name__ == '__main__':
 
     nameNode_dir = f"{nn_ip}:{nn_port}"
 
-    print("Bienvenido al cliente CLI para el sistema de archivos distribuidos")
+    '''print("Bienvenido al cliente CLI para el sistema de archivos distribuidos")
     print("1. Login")
     print("2. Registro")
     choice = input("R: ")
@@ -250,7 +252,7 @@ if __name__ == '__main__':
         username = input("Ingresa tu usuario: ")
         password = input("Ingresa tu clave: ")
         client_dir = input("Ingresa tu IP: ")
-        register_user(username, password, client_dir, nn_ip, nn_port)
+        register_user(username, password, client_dir, nn_ip, nn_port)'''
     
     # Menu
     while True:
@@ -259,7 +261,7 @@ if __name__ == '__main__':
         print("3. Subir un archivo")
         print("4. Logout")
         print("0. Salir")
-        choice_menu = input("R: ")
+        choice_menu = int(input("R: "))
         if choice_menu == 1:
             print("Obteniendo catalogo...")
             request_catalog()
@@ -273,7 +275,7 @@ if __name__ == '__main__':
             output_directory = input("Ingrese el nombre de la carpeta donde se guardaran los bloques: ")
             num_blocks = split_file_into_blocks(input_file, output_directory)
             write_file(input_file, num_blocks)
-            for block in num_blocks:
+            for block in range(0,num_blocks):
                 upload_block(input_file, f"block_{block}")
         elif choice_menu == 4:
             print("Cerrando sesion...")
@@ -285,7 +287,7 @@ if __name__ == '__main__':
 
     '''
     #Prueba de cortar y descortar los archivos txt
-    num_blocks = split_file_into_blocks("./local_files/LoremIpsum.txt", block_output)
+    num_blocks = split_file_into_blocks("./local_files/file/hola.txt", block_output)
     merge_blocks_into_file("./block_output/LoremIpsum", "./downloaded_files/LoremIpsum1.txt")
 
     # Llama a la función para registrar un usuario

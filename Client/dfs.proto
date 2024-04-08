@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package dataNode;
+
+// The greeting service definition.
+service IOFile {
+    // Download File
+    rpc GetFile (FileRequest) returns (FileResponse);
+
+    // Upload File
+    rpc SendFileInfo (FileInfoRequest) returns (FileInfoResponse);
+}
+
+// Download request message for getting file
+message FileRequest {
+  string file_name = 1;
+  string block_name = 2;
+}
+
+// Download response message for getting file
+message FileResponse {
+  string block_data = 1;
+}
+
+// Download request message for sending file
+message FileInfoRequest {
+  string file_name = 1;
+  string block_name = 2;
+  string block_data = 3;
+}
+
+// Download response message for sending file
+message FileInfoResponse {
+  string status = 1;
+}
