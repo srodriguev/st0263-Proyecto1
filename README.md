@@ -129,7 +129,6 @@ Pero ese dato no se actualiza y se puede usar para comparar si alguna discrepanc
 
 Podria ser mas eficiente, si, pero por ahora esta asi.
 
-!!! Falta verificar si se esta actualizando bien el nuevo espacio disponible en cada nodo con el checkHealthReport!!!
 
 # Orden en que se deberian poner a correr las piezas para un correcto funcionamiento:
 

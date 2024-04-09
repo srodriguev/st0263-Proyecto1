@@ -12,7 +12,7 @@ import argparse
 import grpc
 import dfs_pb2
 import dfs_pb2_grpc
-from grpc_reflection.v1alpha import reflection
+
 
 
 app = Flask(__name__)
@@ -34,6 +34,7 @@ def get_folder_size(folder_path):
     return total_size
 
 # METODOS API REST
+
 
 @app.route('/healthReport', methods=['GET'])
 def health_report():
@@ -103,6 +104,44 @@ def change_namenode():
     # Devolver una respuesta
     return jsonify({"message": "NameNode líder actualizado exitosamente"}), 200
 
+# METODO PARA REGISTRARME CON EL NAMENODE
+
+def register_to_namenode():
+    attempts = 0
+    max_attempts = 3
+    retry_interval = 60  # segundos
+
+    while attempts < max_attempts:
+        try:
+            url = f"http://{nameNode_dir}/registerdatanode"
+            uptime_seconds = uptime()
+            used_space_now = get_folder_size(files_folder)  # en bytes
+            available_capacity = float(capacity) - used_space_now
+            print("Used space:", used_space_now, "bytes. Available space:", available_capacity, "bytes.")
+
+            data = {
+                'datanode_address': dataNode_dir,
+                'uptime_seconds': uptime_seconds,
+                'total_space': capacity,
+                'available_space': available_capacity
+            }
+
+            response = requests.post(url, json=data)
+            return response.json(), response.status_code
+
+        except requests.RequestException as e:
+            print(f"Error al intentar registrarse en el Namenode: {e}")
+            attempts += 1
+            if attempts < max_attempts:
+                print(f"Intento #{attempts}. Reintentando en {retry_interval} segundos...")
+                time.sleep(retry_interval)
+            else:
+                print("Se han agotado los intentos. Esperando 60 segundos antes de volver a intentar.")
+                time.sleep(60)
+                attempts = 0  # Reiniciar el contador de intentos
+
+    return None, None  # Si todos los intentos fallan
+
 # METODOS GPRC
 
 # --- gprc logic ---
@@ -166,6 +205,7 @@ def run_grpc_server():
 
 def run_rest_api_server(host, port):
     print(f"Starting REST API server on {host}:{port}...")
+    register_to_namenode()
     app.run(host=host, debug=False, port=int(port))   
 
 # LOOP PRINCIPAL
@@ -189,7 +229,7 @@ if __name__ == '__main__':
     capacity = config['DataNode']['capacity']
     available_capacity = config['DataNode']['available_capacity']
 
-    #config NameNode dir
+    #config NameNode dir (EL LIDER)
     nn_ip = config['NameNode']['leader_ip']
     nn_port = config['NameNode']['leader_port']
 

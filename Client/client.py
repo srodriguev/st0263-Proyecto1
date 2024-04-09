@@ -251,14 +251,14 @@ def main_menu():
             file_name = input("Ingresa el nombre del archivo que deseas descargar: ")
             data = request_file(file_name)
             for block in data:
-                download_block(file_name, block['block_name'])
+                DownloadBlock(file_name, block['block_name'])
         elif choice_menu == '3':
             input_file = input("Ingresa el nombre del archivo: ")
             output_directory = input("Ingrese el nombre de la carpeta donde se guardarán los bloques: ")
             num_blocks = split_file_into_blocks(input_file, output_directory)
             write_file(input_file, num_blocks)
             for block in num_blocks:
-                upload_block(input_file, f"block_{block}")
+                UploadBlock(input_file, f"block_{block}")
         elif choice_menu == '4':
             print("Cerrando sesión...")
             logout(client_dir, nn_ip, nn_port)
@@ -315,17 +315,17 @@ if __name__ == '__main__':
     #main menu
 
     # Iniciar los hilos para ejecutar el menú y el servidor Flask simultáneamente
-    #menu_thread = threading.Thread(target=main_menu)
-    #flask_thread = threading.Thread(target=run_flask)
+    menu_thread = threading.Thread(target=main_menu)
+    flask_thread = threading.Thread(target=run_flask)
 
-    #menu_thread.start()  # Iniciar el hilo para el menú
-    #flask_thread.start()  # Iniciar el hilo para el servidor Flask
+    menu_thread.start()  # Iniciar el hilo para el menú
+    flask_thread.start()  # Iniciar el hilo para el servidor Flask
 
-    #flask_thread.join()  # Esperar a que el hilo del servidor Flask termine (no debería terminar)
-    #menu_thread.join()  # Esperar a que el hilo del menú termine (no debería terminar)   
+    flask_thread.join()  # Esperar a que el hilo del servidor Flask termine (no debería terminar)
+    menu_thread.join()  # Esperar a que el hilo del menú termine (no debería terminar)   
 
+    """
     #testing
-
     #Prueba de cortar y descortar los archivos txt
     #num_blocks = split_file_into_blocks("./local_files/LoremIpsum.txt", block_output)
     #merge_blocks_into_file("./block_output/LoremIpsum", "./downloaded_files/LoremIpsum1.txt")
@@ -348,7 +348,6 @@ if __name__ == '__main__':
     # Solicitar información sobre un archivo específico (reemplaza 'nombre_del_archivo' con el nombre real del archivo)
     #request_file('loremIpsum.txt')
 
-    """
     # Ejemplo de uso de grpc
     blocks_info = [
         {"block_name": "block1", "block_url": "http://127.0.0.1:6000/files/file_01.txt/chunk1"},

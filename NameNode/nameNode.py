@@ -401,18 +401,19 @@ def register_dn():
     data = request.get_json()
 
     # Extraer la información del JSON recibido
-    namenode_address = str(data.get('namenode_address'))  # Convertir a cadena
+    datanode_address = str(data.get('datanode_address'))  # Convertir a cadena
     uptime_seconds = data.get('uptime_seconds')
     total_space = data.get('total_space')
     available_space = data.get('available_space')
 
     # Registrar el data node
-    register_datanode(namenode_address, uptime_seconds, total_space, available_space)
+    register_datanode(datanode_address, uptime_seconds, total_space, available_space)
+    print(f"Registré exitosemanete este datanode: {datanode_address}")
 
     # Devolver una respuesta JSON
     response = {
         'message': 'Data node registrado exitosamente',
-        'namenode_address': namenode_address,
+        'namenode_address': datanode_address,
         'uptime_seconds': uptime_seconds,
         'total_space': total_space,
         'available_space': available_space
