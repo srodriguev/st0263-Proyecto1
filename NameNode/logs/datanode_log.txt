@@ -13,3 +13,33 @@
 {"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 2991.203059911728, "capacity": "50000000", "available_capacity": 50000000.0}
 {"address": "127.0.0.1:6000", "status": "unavailable", "uptime_seconds": null}
 {"address": "127.0.0.1:6000", "status": "unavailable", "uptime_seconds": null}
+{"address": "127.0.0.1:6000", "status": "unavailable", "uptime_seconds": null}
+{"address": "127.0.0.1:6000", "status": "unavailable", "uptime_seconds": null}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 3.0629968643188477, "capacity": "50000000", "available_capacity": 50000000.0}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 3.485898971557617, "capacity": "50000000", "available_capacity": 50000000.0}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 53.496201038360596, "capacity": "50000000", "available_capacity": 50000000.0}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 53.92046523094177, "capacity": "50000000", "available_capacity": 50000000.0}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 173.51529026031494, "capacity": "50000000", "available_capacity": 50000000.0}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 173.94011807441711, "capacity": "50000000", "available_capacity": 50000000.0}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 293.5254580974579, "capacity": "50000000", "available_capacity": 50000000.0}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 293.94978523254395, "capacity": "50000000", "available_capacity": 50000000.0}
+{"address": "127.0.0.1:6000", "status": "unavailable", "uptime_seconds": null}
+{"address": "127.0.0.1:6000", "status": "unavailable", "uptime_seconds": null}
+{"address": "127.0.0.1:6000", "status": "unavailable", "uptime_seconds": null}
+{"address": "127.0.0.1:6000", "status": "unavailable", "uptime_seconds": null}
+{"address": "127.0.0.1:6000", "status": "unavailable", "uptime_seconds": null}
+{"address": "127.0.0.1:6001", "status": "online", "uptime_seconds": 110.54174780845642, "capacity": "50000000", "available_capacity": 50000000.0}
+{"address": "127.0.0.1:6000", "status": "unavailable", "uptime_seconds": null}
+{"address": "127.0.0.1:6001", "status": "online", "uptime_seconds": 110.96652579307556, "capacity": "50000000", "available_capacity": 50000000.0}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 110.65758085250854, "capacity": "50000000", "available_capacity": 50000000.0}
+{"address": "127.0.0.1:6001", "status": "online", "uptime_seconds": 230.56034994125366, "capacity": "50000000", "available_capacity": 50000000.0}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 111.0797188282013, "capacity": "50000000", "available_capacity": 50000000.0}
+{"address": "127.0.0.1:6001", "status": "online", "uptime_seconds": 230.9807951450348, "capacity": "50000000", "available_capacity": 50000000.0}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 230.67466592788696, "capacity": "50000000", "available_capacity": 50000000.0}
+{"address": "127.0.0.1:6001", "status": "online", "uptime_seconds": 350.5760409832001, "capacity": "50000000", "available_capacity": 50000000.0}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 231.09900093078613, "capacity": "50000000", "available_capacity": 50000000.0}
+{"address": "127.0.0.1:6001", "status": "online", "uptime_seconds": 351.00129199028015, "capacity": "50000000", "available_capacity": 50000000.0}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 350.66748690605164, "capacity": "50000000", "available_capacity": 50000000.0}
+{"address": "127.0.0.1:6001", "status": "online", "uptime_seconds": 470.5747299194336, "capacity": "50000000", "available_capacity": 50000000.0}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 351.0954170227051, "capacity": "50000000", "available_capacity": 50000000.0}
+{"address": "127.0.0.1:6001", "status": "online", "uptime_seconds": 470.9967839717865, "capacity": "50000000", "available_capacity": 50000000.0}

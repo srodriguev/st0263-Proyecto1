@@ -301,24 +301,27 @@ if __name__ == '__main__':
     local_files = config['Client']['local_files']
     block_output = config['Client']['block_output']
 
+  # Actualizar los valores si se proporcionan argumentos en la línea de comandos
+    if args.host:
+        ip = args.host
+    if args.port:
+        port = args.port
+
     client_dir = f"{ip}:{port}"
 
     #config NameNode
     nn_ip = config['NameNode']['leader_ip']
     nn_port = config['NameNode']['leader_port']
+    nameNode_dir = f"{nn_ip}:{nn_port}"
 
     # config del estandar para los datanodes
     datanode_port = config ['DataNode']['grpc_port']
-
-    nameNode_dir = f"{nn_ip}:{nn_port}"
 
     # Actualizar los valores si se proporcionan argumentos en la línea de comandos
     if args.host:
         ip = args.host
     if args.port:
         port = args.port
-
-    my_dir = f"{ip}:{port}"
 
 
     #main menu

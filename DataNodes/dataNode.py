@@ -191,12 +191,6 @@ def serve_grpc():
     server.wait_for_termination()
 
 
-# Configuración y ejecución del servidor REST
-def serve_rest_api(host, port):
-    print(f"Starting REST API server on {host}:{port}...")
-    app.run(host=host, debug=False, port=int(port))
-
-
 # --- main ----
 
 def run_grpc_server():
@@ -206,6 +200,7 @@ def run_grpc_server():
 def run_rest_api_server(host, port):
     print(f"Starting REST API server on {host}:{port}...")
     register_to_namenode()
+    print(dataNode_dir)
     app.run(host=host, debug=False, port=int(port))   
 
 # LOOP PRINCIPAL
@@ -234,9 +229,6 @@ if __name__ == '__main__':
     nn_port = config['NameNode']['leader_port']
 
     nameNode_dir = f"{nn_ip}:{nn_port}"
-
-    # config dataNode dir
-    dataNode_dir = f"{host}:{port}"  
     
     app.start_time = time.time()
 
@@ -246,15 +238,18 @@ if __name__ == '__main__':
     if args.port:
         port = args.port
 
-    my_dir = f"{host}:{port}"
+    dataNode_dir = f"{host}:{port}"
 
+    # Creamos los threads
     rest_api_thread = threading.Thread(target=run_rest_api_server, args=(host, port))
     grpc_thread = threading.Thread(target=run_grpc_server)
     
+    #Corremos los threads
     rest_api_thread.start()
     time.sleep(2)  # Asegurarse de que el servidor 1 se inicie completamente antes de iniciar el servidor 2
     grpc_thread.start()
 
+    #Nos unimos a los threads
     rest_api_thread.join()
     grpc_thread.join()
 
