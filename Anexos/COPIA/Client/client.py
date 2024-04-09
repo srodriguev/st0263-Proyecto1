@@ -23,39 +23,29 @@ app = Flask(__name__)
 # corta un archivo en bloques
 def split_file_into_blocks(input_file, output_directory):
     print("Time to divide this file in chunks")
-    
-    # Completar la ruta de entrada con la variable local_files si no es una ruta absoluta
-    if not os.path.isabs(input_file):
-        input_file = os.path.join(local_files, input_file)
-    
-    # Revisar que la ruta donde guardar los bloques exista, y crearla si no existe
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
 
-    try:
-        # Obtener el nombre del archivo de entrada sin la extensión
-        input_filename_without_extension = os.path.splitext(os.path.basename(input_file))[0]
+    # Obtener el nombre del archivo de entrada sin la extensión
+    input_filename_without_extension = os.path.splitext(os.path.basename(input_file))[0]
 
-        # Crear la subcarpeta con el mismo nombre que el archivo de entrada
-        output_subdirectory = os.path.join(output_directory, input_filename_without_extension)
-        if not os.path.exists(output_subdirectory):
-            os.makedirs(output_subdirectory)
+    # Crear la subcarpeta con el mismo nombre que el archivo de entrada
+    output_subdirectory = os.path.join(output_directory, input_filename_without_extension)
+    if not os.path.exists(output_subdirectory):
+        os.makedirs(output_subdirectory)
 
-        block_size = 4 * 1024  # 4KB
-        with open(input_file, 'rb') as file:
-            block_number = 0
-            while True:
-                block_data = file.read(block_size)
-                if not block_data:
-                    break
-                block_filename = os.path.join(output_subdirectory, f"block_{block_number}")
-                with open(block_filename, 'wb') as block_file:
-                    block_file.write(block_data)
-                block_number += 1
-        return block_number
-    except FileNotFoundError:
-        print("File not found.")
-        return None
+    block_size = 4 * 1024  # 4KB
+    with open(input_file, 'rb') as file:
+        block_number = 0
+        while True:
+            block_data = file.read(block_size)
+            if not block_data:
+                break
+            block_filename = os.path.join(output_subdirectory, f"block_{block_number}")
+            with open(block_filename, 'wb') as block_file:
+                block_file.write(block_data)
+            block_number += 1
+    return block_number
 
 #combina los bloques en 1 archivo.
 def merge_blocks_into_file(blocks_directory, output_file):
@@ -237,15 +227,15 @@ def main_menu():
     print("2. Registro")
     choice = input("R: ")
     if choice == '1':
-        print(nn_ip, nn_port)
         username = input("Ingresa tu usuario: ")
         password = input("Ingresa tu clave: ")
-        login(username, password, nn_ip, nn_port)
+        register_user(username, password, nn_ip, nn_port)
     elif choice == '2':
         username = input("Ingresa tu usuario: ")
         password = input("Ingresa tu clave: ")
+        client_dir = input("Ingresa tu IP: ")
         register_user(username, password, client_dir, nn_ip, nn_port)
-
+    
     # Menú
     while True:
         print("1. Ver catálogo")
@@ -264,7 +254,8 @@ def main_menu():
                 DownloadBlock(file_name, block['block_name'])
         elif choice_menu == '3':
             input_file = input("Ingresa el nombre del archivo: ")
-            num_blocks = split_file_into_blocks(input_file, block_output)
+            output_directory = input("Ingrese el nombre de la carpeta donde se guardarán los bloques: ")
+            num_blocks = split_file_into_blocks(input_file, output_directory)
             write_file(input_file, num_blocks)
             for block in num_blocks:
                 UploadBlock(input_file, f"block_{block}")
@@ -324,11 +315,11 @@ if __name__ == '__main__':
     #main menu
 
     # Iniciar los hilos para ejecutar el menú y el servidor Flask simultáneamente
-    flask_thread = threading.Thread(target=run_flask)
     menu_thread = threading.Thread(target=main_menu)
+    flask_thread = threading.Thread(target=run_flask)
 
-    flask_thread.start()  # Iniciar el hilo para el servidor Flask
     menu_thread.start()  # Iniciar el hilo para el menú
+    flask_thread.start()  # Iniciar el hilo para el servidor Flask
 
     flask_thread.join()  # Esperar a que el hilo del servidor Flask termine (no debería terminar)
     menu_thread.join()  # Esperar a que el hilo del menú termine (no debería terminar)   

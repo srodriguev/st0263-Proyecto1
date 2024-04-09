@@ -1,0 +1,74 @@
+{
+    "datanodes": [
+        {
+            "address": "127.0.0.1:6000",
+            "status": "offline",
+            "uptime": 3600,
+            "total_space": "50000000",
+            "available_space": 49999978.0,
+            "files": [
+                {
+                    "name": "loremIpsum.txt",
+                    "blocks": [
+                        {
+                            "name": "block1",
+                            "url": "http://127.0.0.1:6000/files/loremIpsum.txt/block1"
+                        },
+                        {
+                            "name": "block2",
+                            "url": "http://127.0.0.1:6000/files/loremIpsum.txt/block2"
+                        }
+                    ]
+                },
+                {
+                    "name": "example.txt",
+                    "blocks": [
+                        {
+                            "name": "block3",
+                            "url": "http://127.0.0.1:6000/files/example.txt/block1"
+                        },
+                        {
+                            "name": "block4",
+                            "url": "http://127.0.0.1:6000/files/example.txt/block2"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "address": "127.0.0.1:6001",
+            "status": "offline",
+            "uptime": 7200,
+            "total_space": "50000000",
+            "available_space": 49999978.0,
+            "files": [
+                {
+                    "name": "loremIpsum.txt",
+                    "blocks": [
+                        {
+                            "name": "block1",
+                            "url": "http://127.0.0.1:6001/files/loremIpsum.txt/block1"
+                        },
+                        {
+                            "name": "block2",
+                            "url": "http://127.0.0.1:6001/files/loremIpsum.txt/block2"
+                        }
+                    ]
+                },
+                {
+                    "name": "example.txt",
+                    "blocks": [
+                        {
+                            "name": "block3",
+                            "url": "http://127.0.0.1:6001/files/example.txt/block1"
+                        },
+                        {
+                            "name": "block4",
+                            "url": "http://127.0.0.1:6001/files/example.txt/block2"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

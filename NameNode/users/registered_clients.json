@@ -1,26 +1,8 @@
 {
-    "192.186.1:5000": [
+    "127.0.0.1/5500": [
         [
-            "user_1",
-            "$2b$12$JFxMXJvRm3lTsjpklucK8el6hIv0VB7N/bqQSkSXxOK4.Fzrg0WpW"
-        ]
-    ],
-    "192.168.1.105": [
-        [
-            "cincocinco",
-            "$2b$12$EuJDKNWkY7KrUO0LHYo/Q.oYy5C3tVtcc4Z38lyrigofLGESpAuhS"
-        ]
-    ],
-    "127.0.0.1:5500": [
-        [
-            "user_1",
-            "$2b$12$HJBrNP6S8.yyhXYPllvz/Ox0lLcg5Z1CdL0FlUV0mdNJZNswCWUyi"
-        ]
-    ],
-    "192.168.1.104": [
-        [
-            "MAYONESA",
-            "$2b$12$te.N3DkrVqiXSy8H4C70jeEXWpuod54gwYEh/Hf2fI6tmu17qXv9C"
+            "admin",
+            "$2b$12$hj30BSqVFb1/c8ox/N/Eh.B1.stak1VqniSsuEaW4o6mc.59tjZTa"
         ]
     ]
 }

@@ -1,7 +1,3 @@
 {
-    "files": [
-      { "name": "file1.txt", "available": true },
-      { "name": "loremIpsum.txt", "available": false },
-      { "name": "example.txt", "available": true }
-    ]
-  }
+  
+}
