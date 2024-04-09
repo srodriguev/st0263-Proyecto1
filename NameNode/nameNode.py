@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from flask import Flask, request, jsonify, send_file
+from collections import defaultdict
 import json
 import csv
 import requests
@@ -230,7 +231,21 @@ def get_file_blocks():
 
 # ESCRIBIR
 
-# recibimos el request y designamos el espacio para los bloques
+# Método para obtener datanodes disponibles desde el archivo CSV de registered datanodes
+def get_available_datanodes_from_csv():
+    available_datanodes = []
+    with open(registered_datanodes_file, mode='r', newline='') as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            if row['status'] == 'True':
+                available_datanodes.append({
+                    'address': row['address'],
+                    'total_space': int(row['total_space']),
+                    'available_space': float(row['available_space'])
+                })
+    return available_datanodes
+
+# Método para asignar bloques
 @app.route('/allocateblocks', methods=['POST'])
 def allocate_blocks():
     data = request.get_json()
@@ -239,30 +254,12 @@ def allocate_blocks():
     file_name = data.get('file_name')
     num_blocks = data.get('num_blocks')
 
-    # Verificar si el archivo inventory.json existe en la ruta especificada
-    inventory_path = os.path.join(archive_url, 'inventory.json')
-    if not os.path.exists(inventory_path):
-        return jsonify({'error': 'El archivo inventory.json no existe'}), 404
+    # Obtener los datanodes disponibles desde el archivo CSV
+    available_datanodes = get_available_datanodes_from_csv()
 
-    # Leer el archivo inventory.json
-    with open(inventory_path, 'r') as inventory_file:
-        inventory_data = json.load(inventory_file)
-
-    # Verificar si el archivo ya está en el inventario
-    for datanode in inventory_data['datanodes']:
-        for file_data in datanode['files']:
-            if file_data['name'] == file_name:
-                print("el archivo ya estaba registrado")
-                return jsonify({'error': f'El archivo {file_name} ya está en el inventario'}), 400
-
-    # Obtener la lista de nodos de datos disponibles y ordenarlos por espacio disponible de menor a mayor
-    available_datanodes = sorted(get_available_datanodes(inventory_data), key=lambda x: x['available_space'])
-
-    print(available_datanodes)
-    print(num_blocks)
-    # Verificar si hay suficientes nodos de datos disponibles para almacenar todos los bloques
-    if len(available_datanodes) < num_blocks:
-        return jsonify({'error': 'No hay suficientes nodos de datos disponibles para almacenar todos los bloques'}), 400
+    # Verificar si hay suficientes datanodes disponibles
+    if len(available_datanodes) < 2:
+        return jsonify({'error': 'No hay suficientes datanodes disponibles para almacenar todos los bloques'}), 400
 
     # Lista para almacenar las asignaciones de bloques
     block_assignments = []
@@ -275,7 +272,11 @@ def allocate_blocks():
         for j in range(2):
             datanode = available_datanodes[j]
             block_url = f"http://{datanode['address']}/files/{file_name}/{block_name}"
-            block_assignments.append({'block_name': block_name, 'block_url': block_url, 'assigned_datanode': datanode['address']})
+            block_assignments.append({
+                'block_name': block_name,
+                'block_url': block_url,
+                'assigned_datanode': datanode['address']
+            })
 
     return jsonify(block_assignments), 200
 
@@ -790,7 +791,6 @@ def update_registered_clients_file(leader_ip, leader_port):
             print("Error al obtener el archivo de clientes registrados del líder.")
     except Exception as e:
         print(f"Error al realizar la solicitud al líder: {e}")
-
 
 def update_logged_clients_file(leader_ip, leader_port):
     try:

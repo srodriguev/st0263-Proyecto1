@@ -133,9 +133,17 @@ def request_file(file_name):
 
 
 # METODOS DE ESCRITURA DE ARCHIVOS
+
+#Helper para hacer los llamados rpc para cada bloquecito
+def process_block_assignments(file_name, block_assignments):
+    for block in block_assignments:
+        block_name = block['block_name']
+        block_url = block['block_url']
+        assigned_datanode = block['assigned_datanode']
+        UploadBlock(file_name, block_name, block_url)
         
 # Método para enviar la solicitud de asignación de bloques al servidor principal
-def write_file(file_name, num_blocks):
+def upload_request(file_name, num_blocks):
     # Construir el JSON con los datos del archivo y el número de bloques
     data = {
         "file_name": file_name,
@@ -154,6 +162,9 @@ def write_file(file_name, num_blocks):
         print("Asignaciones de bloques recibidas:")
         for block in block_assignments:
             print(f"Nombre del bloque: {block['block_name']}, URL del bloque: {block['block_url']}, DataNode asignado: {block['assigned_datanode']}")
+
+        # Llamar al método para procesar las asignaciones de bloques
+        process_block_assignments(file_name, block_assignments)
     else:
         print("Error al obtener las asignaciones de bloques:", response.text)
 
@@ -265,9 +276,7 @@ def main_menu():
         elif choice_menu == '3':
             input_file = input("Ingresa el nombre del archivo: ")
             num_blocks = split_file_into_blocks(input_file, block_output)
-            write_file(input_file, num_blocks)
-            for block in num_blocks:
-                UploadBlock(input_file, f"block_{block}")
+            upload_request(input_file, num_blocks)
         elif choice_menu == '4':
             print("Cerrando sesión...")
             logout(client_dir, nn_ip, nn_port)

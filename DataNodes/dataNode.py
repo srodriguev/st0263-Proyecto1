@@ -186,7 +186,8 @@ class IOFileServicer(dfs_pb2_grpc.IOFileServicer):
 def serve_grpc():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     dfs_pb2_grpc.add_IOFileServicerServicer_to_server(IOFileServicer(), server)
-    server.add_insecure_port('[::]:50051')
+    #server.add_insecure_port('[::]:50051')
+    server.add_insecure_port(f'[::]:{grpc_port}')  # Usar el puerto de la configuración
     server.start()
     server.wait_for_termination()
 
@@ -211,6 +212,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Start the NameNode.')
     parser.add_argument('--host', default=None, help='Host of the NameNode')
     parser.add_argument('--port', default=None, help='Port of the NameNode')
+    parser.add_argument('--grpc_port', default=None, help='Port for gRPC server')
+
 
     args = parser.parse_args()
 
@@ -223,12 +226,11 @@ if __name__ == '__main__':
     datanode_folder = config['DataNode']['datanode_folder']
     capacity = config['DataNode']['capacity']
     available_capacity = config['DataNode']['available_capacity']
+    grpc_port = config['DataNode']['grpc_port']
 
     #config NameNode dir (EL LIDER)
     nn_ip = config['NameNode']['leader_ip']
     nn_port = config['NameNode']['leader_port']
-
-    nameNode_dir = f"{nn_ip}:{nn_port}"
     
     app.start_time = time.time()
 
@@ -237,8 +239,15 @@ if __name__ == '__main__':
         ip = args.host
     if args.port:
         port = args.port
+    if args.grpc_port:
+        grpc_port = args.grpc_port
 
+    # Direccion en que corro Flask
     dataNode_dir = f"{host}:{port}"
+    # Direccion de mi NameNode leader
+    nameNode_dir = f"{nn_ip}:{nn_port}"
+    # Direccion RPC
+    grpc_dir = f"{host}:{grpc_port}"
 
     # Creamos los threads
     rest_api_thread = threading.Thread(target=run_rest_api_server, args=(host, port))
