@@ -210,17 +210,15 @@ def get_file_blocks():
         inventory_data = json.load(inventory_file)
 
     # Buscar el archivo solicitado en el inventario
-    file_blocks = []
+    file_blocks = None
     for datanode in inventory_data['datanodes']:
-        for file_entry in datanode['files']:
-            if file_entry['name'] == file_requested:
-                file_blocks = file_entry['blocks']
+        if 'files' in datanode:
+            if file_requested in datanode['files']:
+                file_blocks = datanode['files'][file_requested]['blocks']
                 break
-        if file_blocks:
-            break
 
     # Verificar si el archivo solicitado está en el inventario
-    if not file_blocks:
+    if file_blocks is None:
         return jsonify({'error': f'El archivo {file_requested} no está en el inventario'}), 404
 
     # Construir la respuesta con la lista de bloques y sus URL
