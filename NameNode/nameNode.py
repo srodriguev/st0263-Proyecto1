@@ -241,7 +241,8 @@ def get_available_datanodes_from_csv():
                 available_datanodes.append({
                     'address': row['address'],
                     'total_space': int(row['total_space']),
-                    'available_space': float(row['available_space'])
+                    'available_space': float(row['available_space']),
+                    'grpc_dir': row['grpc_dir']
                 })
     return available_datanodes
 
@@ -265,7 +266,7 @@ def allocate_blocks():
     block_assignments = []
 
     # Iterar sobre cada bloque que debe ser almacenado
-    for i in range(1, num_blocks + 1):
+    for i in range(1, num_blocks ):
         block_name = f"block{i}"
 
         # Almacenar cada bloque en dos nodos de datos diferentes
@@ -275,6 +276,8 @@ def allocate_blocks():
             block_assignments.append({
                 'block_name': block_name,
                 'block_url': block_url,
+                'flask_dir': datanode['address'],
+                'grpc_dir': datanode['grpc_dir'],
                 'assigned_datanode': datanode['address']
             })
 
@@ -367,7 +370,7 @@ def reallocate_blocks(address):
 # --- FUNCIONES DEL LADO DEL DATANODE
 
 # helper para registro de datanode
-def register_datanode(namenode_address, uptime_seconds, total_space, available_space):
+def register_datanode(namenode_address, uptime_seconds, total_space, available_space,grpc_dir):
     # Leer todas las entradas existentes del archivo CSV
     entries = []
     with open(registered_datanodes_file, mode='r', newline='') as file:
@@ -384,12 +387,13 @@ def register_datanode(namenode_address, uptime_seconds, total_space, available_s
             entry[2] = uptime_seconds
             entry[3] = total_space
             entry[4] = available_space
+            entry[5] = grpc_dir
             address_found = True
             break
 
     # Si la dirección no está registrada, agregar una nueva entrada
     if not address_found:
-        entries.append([namenode_address, True, uptime_seconds, total_space, available_space])
+        entries.append([namenode_address, True, uptime_seconds, total_space, available_space, grpc_dir])
 
     # Escribir las entradas actualizadas en el archivo CSV
     with open(registered_datanodes_file, mode='w', newline='') as file:
@@ -406,9 +410,10 @@ def register_dn():
     uptime_seconds = data.get('uptime_seconds')
     total_space = data.get('total_space')
     available_space = data.get('available_space')
+    grpc_dir = data.get('grpc_dir')
 
     # Registrar el data node
-    register_datanode(datanode_address, uptime_seconds, total_space, available_space)
+    register_datanode(datanode_address, uptime_seconds, total_space, available_space, grpc_dir)
     print(f"Registré exitosemanete este datanode: {datanode_address}")
 
     # Devolver una respuesta JSON
@@ -417,7 +422,8 @@ def register_dn():
         'namenode_address': datanode_address,
         'uptime_seconds': uptime_seconds,
         'total_space': total_space,
-        'available_space': available_space
+        'available_space': available_space,
+        'grpc_dir': grpc_dir
     }
     return jsonify(response), 200
 

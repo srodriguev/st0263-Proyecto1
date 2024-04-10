@@ -54,7 +54,6 @@ def health_report():
 @app.route('/stockReport', methods=['GET'])
 def stock_report():
     inventory = []
-
     # Itera sobre los directorios en la carpeta de archivos configurada
     for dirpath, dirnames, filenames in os.walk(files_folder):
         for dirname in dirnames:
@@ -123,7 +122,8 @@ def register_to_namenode():
                 'datanode_address': dataNode_dir,
                 'uptime_seconds': uptime_seconds,
                 'total_space': capacity,
-                'available_space': available_capacity
+                'available_space': available_capacity,
+                'grpc_dir': grpc_dir
             }
 
             response = requests.post(url, json=data)
@@ -166,19 +166,29 @@ class IOFileServicer(dfs_pb2_grpc.IOFileServicer):
     
     # Método para cargar un nuevo bloque de archivo
     def UploadBlock(self, request, context):
-        print("Got an upload request")
+        print("Got an upload request!!!")
         file_name = request.file_name
         block_name = request.block_name
         block_data = request.block_data
-        
+    
+        print("Creating variables to store block...")
         folder_path = os.path.join(files_folder, file_name)
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
         block_path = os.path.join(folder_path, block_name)
         file_name = request.block_name
-        with open(block_path, "w") as file:
-            file.write(block_data)
-        return dfs_pb2.UploadBlockResponse(status="File information received successfully.")
+
+        print(f"block_path: {block_path}")
+        print(f"file_name: {file_name}")
+        #print(f"block_data: {block_data}")
+        try:
+            with open(block_path, "w") as file:
+                file.write(block_data)
+            return dfs_pb2.UploadBlockResponse(status="File information received successfully.", success=True)
+        except Exception as e:
+            return dfs_pb2.UploadBlockResponse(status=f"Error: {str(e)}", success=False)
+
+
 
 
 
@@ -195,11 +205,11 @@ def serve_grpc():
 # --- main ----
 
 def run_grpc_server():
-    print("Starting gRPC server...")
+    print(f"Starting gRPC server...on: {grpc_port}")
     serve_grpc()
 
 def run_rest_api_server(host, port):
-    print(f"Starting REST API server on {host}:{port}...")
+    print(f"Starting REST API server on: {host}:{port}...")
     register_to_namenode()
     print(dataNode_dir)
     app.run(host=host, debug=False, port=int(port))   
@@ -260,6 +270,7 @@ if __name__ == '__main__':
 
     #Nos unimos a los threads
     rest_api_thread.join()
+    time.sleep(2) 
     grpc_thread.join()
 
     #print("Yo voy a correr en: ",dataNode_dir)

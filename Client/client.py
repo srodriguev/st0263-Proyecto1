@@ -4,6 +4,7 @@ from flask import Flask, request, jsonify, send_file
 import json
 import os
 import sys
+import time
 import bcrypt
 import socket
 import requests
@@ -22,7 +23,7 @@ app = Flask(__name__)
 
 # corta un archivo en bloques
 def split_file_into_blocks(input_file, output_directory):
-    print("Time to divide this file in chunks")
+    print("Time to divide this file into chunks")
     
     # Completar la ruta de entrada con la variable local_files si no es una ruta absoluta
     if not os.path.isabs(input_file):
@@ -33,22 +34,23 @@ def split_file_into_blocks(input_file, output_directory):
         os.makedirs(output_directory)
 
     try:
-        # Obtener el nombre del archivo de entrada sin la extensión
-        input_filename_without_extension = os.path.splitext(os.path.basename(input_file))[0]
+        # Obtener el nombre del archivo de entrada con la extensión
+        input_filename_with_extension = os.path.basename(input_file)
 
         # Crear la subcarpeta con el mismo nombre que el archivo de entrada
-        output_subdirectory = os.path.join(output_directory, input_filename_without_extension)
+        output_subdirectory = os.path.join(output_directory, f"{input_filename_with_extension}")
         if not os.path.exists(output_subdirectory):
             os.makedirs(output_subdirectory)
 
         block_size = 4 * 1024  # 4KB
         with open(input_file, 'rb') as file:
-            block_number = 0
-            while True:
+            block_number = 1  # Iniciar desde 1 en lugar de 0 !!
+            while True: 
                 block_data = file.read(block_size)
                 if not block_data:
                     break
-                block_filename = os.path.join(output_subdirectory, f"block_{block_number}")
+                block_filename = os.path.join(output_subdirectory, f"block{block_number}")
+                print(f"block number: {block_number}")
                 with open(block_filename, 'wb') as block_file:
                     block_file.write(block_data)
                 block_number += 1
@@ -139,8 +141,12 @@ def process_block_assignments(file_name, block_assignments):
     for block in block_assignments:
         block_name = block['block_name']
         block_url = block['block_url']
+        flask_dir = block['flask_dir']
+        grpc_dir = block['grpc_dir']
         assigned_datanode = block['assigned_datanode']
-        UploadBlock(file_name, block_name, block_url)
+        print(f"Inside procblockass: {file_name}, {block_name}, {grpc_dir}")
+        #UploadBlock("file_01.txt", 'chunk1', "127.0.0.1:50051")
+        UploadBlock(file_name, block_name, grpc_dir)
         
 # Método para enviar la solicitud de asignación de bloques al servidor principal
 def upload_request(file_name, num_blocks):
@@ -189,18 +195,19 @@ def change_namenode():
 
 # --- METODOS DE GPRC
 
-def UploadBlock(file_name, block_name, peer_server_url):
+def UploadBlock(file_name, block_name, datanode_server_url):
     # Crea un canal gRPC para la comunicación con el servidor
-    with grpc.insecure_channel(peer_server_url) as channel:
+    with grpc.insecure_channel(datanode_server_url) as channel:
         # Crea un cliente para el servicio gRPC
         stub = dfs_pb2_grpc.IOFileServicerStub(channel)
         
         # Construye la ruta del bloque
-        block_path = os.path.join(local_files, file_name, block_name)
+        block_path = os.path.join(block_output, file_name, block_name)
+        print(f"block path: {block_path}")
         
         # Verifica si el bloque existe
         if not os.path.exists(block_path):
-            print("Block not found.")
+            print(f"Block not found.Adress searched for: {block_path}")
             return
         
         # Lee los datos del bloque
@@ -208,11 +215,14 @@ def UploadBlock(file_name, block_name, peer_server_url):
             block_data = file.read()
         
         # Crea una solicitud para cargar un nuevo bloque de archivo
+        print("Creating the grpc request...")
         request = dfs_pb2.UploadBlockRequest(file_name=file_name, block_name=block_name, block_data=block_data)
         
+        print("Assigning response from server...")
         # Envía la solicitud al servidor gRPC
         response = stub.UploadBlock(request)
         
+        print("Manage response success or failure...")
         # Maneja la respuesta del servidor
         if response.success:
             print("Upload successful.")
@@ -340,6 +350,7 @@ if __name__ == '__main__':
     menu_thread = threading.Thread(target=main_menu)
 
     flask_thread.start()  # Iniciar el hilo para el servidor Flask
+    time.sleep(3) 
     menu_thread.start()  # Iniciar el hilo para el menú
 
     flask_thread.join()  # Esperar a que el hilo del servidor Flask termine (no debería terminar)

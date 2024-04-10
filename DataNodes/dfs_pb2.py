@@ -14,7 +14,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\tdfs.proto\"=\n\x14\x44ownloadBlockRequest\x12\x11\n\tfile_name\x18\x01 \x01(\t\x12\x12\n\nblock_name\x18\x02 \x01(\t\"+\n\x15\x44ownloadBlockResponse\x12\x12\n\nblock_data\x18\x01 \x01(\t\"O\n\x12UploadBlockRequest\x12\x11\n\tfile_name\x18\x01 \x01(\t\x12\x12\n\nblock_name\x18\x02 \x01(\t\x12\x12\n\nblock_data\x18\x03 \x01(\t\"%\n\x13UploadBlockResponse\x12\x0e\n\x06status\x18\x01 \x01(\t2\x8a\x01\n\x0eIOFileServicer\x12>\n\rDownloadBlock\x12\x15.DownloadBlockRequest\x1a\x16.DownloadBlockResponse\x12\x38\n\x0bUploadBlock\x12\x13.UploadBlockRequest\x1a\x14.UploadBlockResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\tdfs.proto\"=\n\x14\x44ownloadBlockRequest\x12\x11\n\tfile_name\x18\x01 \x01(\t\x12\x12\n\nblock_name\x18\x02 \x01(\t\"+\n\x15\x44ownloadBlockResponse\x12\x12\n\nblock_data\x18\x01 \x01(\t\"O\n\x12UploadBlockRequest\x12\x11\n\tfile_name\x18\x01 \x01(\t\x12\x12\n\nblock_name\x18\x02 \x01(\t\x12\x12\n\nblock_data\x18\x03 \x01(\t\"6\n\x13UploadBlockResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x0f\n\x07success\x18\x02 \x01(\x08\x32\x8a\x01\n\x0eIOFileServicer\x12>\n\rDownloadBlock\x12\x15.DownloadBlockRequest\x1a\x16.DownloadBlockResponse\x12\x38\n\x0bUploadBlock\x12\x13.UploadBlockRequest\x1a\x14.UploadBlockResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -28,7 +28,7 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _globals['_UPLOADBLOCKREQUEST']._serialized_start=121
   _globals['_UPLOADBLOCKREQUEST']._serialized_end=200
   _globals['_UPLOADBLOCKRESPONSE']._serialized_start=202
-  _globals['_UPLOADBLOCKRESPONSE']._serialized_end=239
-  _globals['_IOFILESERVICER']._serialized_start=242
-  _globals['_IOFILESERVICER']._serialized_end=380
+  _globals['_UPLOADBLOCKRESPONSE']._serialized_end=256
+  _globals['_IOFILESERVICER']._serialized_start=259
+  _globals['_IOFILESERVICER']._serialized_end=397
 # @@protoc_insertion_point(module_scope)

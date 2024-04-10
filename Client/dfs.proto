@@ -29,6 +29,7 @@ message UploadBlockRequest {
 
 // Upload response message for sending block
 message UploadBlockResponse {
-  string status = 1;
+    string status = 1;
+    bool success = 2;
 }
 
