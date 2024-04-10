@@ -15,6 +15,8 @@ Proyecto 1 - st0263 - Topicos de telematica
 - Logout de usuarios.
 - Leer del config los datos de Cliente y otros nodos.
 - Metodos que le envian los request al DataNode del catalogo y la ubicacion de un archivo.
+- Metodos Download y Upload de gRPC con el dataNode.
+- Forma de interactuar con el programa en vivo (loop principal de acciones o UI)
 
 **DataNode:**
 - Se ve el peso de los archivos (espacio ocupada) en bytes
@@ -22,6 +24,7 @@ Proyecto 1 - st0263 - Topicos de telematica
 - Puede enviar reportes de salud API Rest
 - Puede enviar reportes de Stock API Rest (iventario)
 - Se configura con el config file
+- Metodos Download y Upload de gRPC con el cliente.
 
 **Namenode (Servidor ppal):**
 - Contesta el login
@@ -49,16 +52,14 @@ Proyecto 1 - st0263 - Topicos de telematica
 
 **En general:**
 - Se han probado los modulos por separado pero no todo el procedimiento de inicio a fin.
-- No se ha probado el manejo de errores en algunos modulos
+- No se ha probado el manejo de errores en varios módulos.
 
 **Client:**
 - mover los helpers a su propio archivo python para que se puedan reutilizar y por orden, corregir errores de importacion (a mi no me estaba dando sobs). 
-- Metodos Download y Upload de gRPC con el dataNode.
-- Forma de interactuar con el programa en vivo (loop principal de acciones o UI)
+- Varias funciones del menu tienen logica incorrecta, se estan corrigiendo.
 
 **DataNode:**
 - Deberia guardar el hash de cada bloque en algun lado para luego compararlo al enviar el reporte de stock y ver si algun archivo se ha perdido, dañado o corrompido.
-- Metodos Download y Upload de gRPC con el cliente.
 
 **NameNode:**
 - Failback del principal al secundario si se muere el otro: avisar a los demas integrantes y que actualicen la IP del namenode pa' los requests. -> En proceso.
