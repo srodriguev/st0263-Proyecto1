@@ -539,3 +539,65 @@
 {"address": "127.0.0.1:6001", "status": "unavailable", "uptime_seconds": null}
 {"address": "127.0.0.1:6000", "status": "unavailable", "uptime_seconds": null}
 {"address": "127.0.0.1:6001", "status": "unavailable", "uptime_seconds": null}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 118.42092800140381, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6001", "status": "online", "uptime_seconds": 116.44145917892456, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 118.84227991104126, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6001", "status": "online", "uptime_seconds": 116.86252617835999, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 238.43984985351562, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6001", "status": "online", "uptime_seconds": 236.4612011909485, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 238.85841298103333, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6001", "status": "online", "uptime_seconds": 236.87865018844604, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 358.4544098377228, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6001", "status": "online", "uptime_seconds": 356.4742991924286, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 358.87303495407104, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6001", "status": "online", "uptime_seconds": 356.8932111263275, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 478.4748830795288, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6001", "status": "online", "uptime_seconds": 476.4959399700165, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 478.88832783699036, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6001", "status": "online", "uptime_seconds": 476.90804409980774, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 598.4973328113556, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6001", "status": "online", "uptime_seconds": 596.5221202373505, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 598.9051158428192, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6001", "status": "online", "uptime_seconds": 596.924957036972, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 718.5222299098969, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6001", "status": "online", "uptime_seconds": 716.543370962143, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 718.922120809555, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6001", "status": "online", "uptime_seconds": 716.9422099590302, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 838.5437569618225, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6001", "status": "online", "uptime_seconds": 836.5655279159546, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 839.0249190330505, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6001", "status": "online", "uptime_seconds": 837.0523581504822, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 958.5627620220184, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6001", "status": "online", "uptime_seconds": 956.5850880146027, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 959.0484547615051, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6001", "status": "online", "uptime_seconds": 957.0717220306396, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6000", "status": "unavailable", "uptime_seconds": null}
+{"address": "127.0.0.1:6001", "status": "unavailable", "uptime_seconds": null}
+{"address": "127.0.0.1:6000", "status": "unavailable", "uptime_seconds": null}
+{"address": "127.0.0.1:6001", "status": "unavailable", "uptime_seconds": null}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 118.32249999046326, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6001", "status": "online", "uptime_seconds": 116.61606287956238, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 118.7424669265747, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6001", "status": "online", "uptime_seconds": 117.02832078933716, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 238.34225821495056, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6001", "status": "online", "uptime_seconds": 236.63129663467407, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 238.7584569454193, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6001", "status": "online", "uptime_seconds": 237.04587173461914, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6000", "status": "unavailable", "uptime_seconds": null}
+{"address": "127.0.0.1:6001", "status": "unavailable", "uptime_seconds": null}
+{"address": "127.0.0.1:6000", "status": "unavailable", "uptime_seconds": null}
+{"address": "127.0.0.1:6001", "status": "unavailable", "uptime_seconds": null}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 118.41087794303894, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6001", "status": "online", "uptime_seconds": 116.71293091773987, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 118.86549496650696, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6001", "status": "online", "uptime_seconds": 117.16646003723145, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 238.43117594718933, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6001", "status": "online", "uptime_seconds": 236.73607516288757, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 238.8822741508484, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6001", "status": "online", "uptime_seconds": 237.1830711364746, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6000", "status": "unavailable", "uptime_seconds": null}
+{"address": "127.0.0.1:6000", "status": "unavailable", "uptime_seconds": null}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 111.98773217201233, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6001", "status": "online", "uptime_seconds": 110.28869605064392, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6000", "status": "online", "uptime_seconds": 112.42598605155945, "capacity": "50000000", "available_capacity": 49967232.0}
+{"address": "127.0.0.1:6001", "status": "online", "uptime_seconds": 110.7254102230072, "capacity": "50000000", "available_capacity": 49967232.0}

@@ -231,7 +231,105 @@ def get_file_blocks():
 
 # ESCRIBIR
 
-# Método para obtener datanodes disponibles desde el archivo CSV de registered datanodes
+# Metodo para actualizar el catálogo
+def updateCatalog(file_name):
+    # Obtener la ruta completa del archivo de catálogo
+    catalog_path = os.path.join(archive_url, "catalog.json")
+
+    # Cargar el archivo de catálogo si existe, o inicializar un nuevo diccionario si no existe
+    if os.path.exists(catalog_path):
+        with open(catalog_path, "r") as catalog_file:
+            catalog = json.load(catalog_file)
+    else:
+        catalog = {"files": []}
+
+    # Verificar si el archivo ya está en el catálogo
+    file_exists = False
+    for file_entry in catalog['files']:
+        if file_entry['name'] == file_name:
+            # Actualizar la disponibilidad del archivo
+            file_entry['available'] = True
+            file_exists = True
+            break
+
+    # Si el archivo no está en el catálogo, agregarlo
+    if not file_exists:
+        catalog['files'].append({"name": file_name, "available": True})
+
+    # Guardar el catálogo actualizado en el archivo JSON
+    with open(catalog_path, "w") as catalog_file:
+        json.dump(catalog, catalog_file, indent=4)
+
+# Hay que actualizar inventario cada vez que agrego un archivo nuevo
+def addToInventory(file_name, block_assignments, available_datanodes):
+    # Obtener la ruta completa del archivo de inventario
+    inventory_path = os.path.join(archive_url, "inventory.json")
+
+    # Cargar el archivo de inventario si existe, o inicializar un nuevo diccionario si no existe
+    if os.path.exists(inventory_path):
+        with open(inventory_path, "r") as inventory_file:
+            inventory = json.load(inventory_file)
+    else:
+        inventory = {"datanodes": []}
+
+    # Iterar sobre las asignaciones de bloques y actualizar el inventario
+    for assignment in block_assignments:
+        block_name = assignment['block_name']
+        block_url = assignment['block_url']
+        grpc_dir = assignment['grpc_dir']
+        assigned_datanode = assignment['assigned_datanode']
+
+        # Verificar si el datanode ya está en el inventario
+        datanode_exists = False
+        for node in inventory['datanodes']:
+            if node['address'] == assigned_datanode:
+                # Agregar el bloque al datanode existente
+                block_info = {"name": block_name, "url": block_url}
+                node['files'][file_name]['blocks'].append(block_info)
+                datanode_exists = True
+                break
+
+        # Si el datanode no está en el inventario, agregarlo
+        if not datanode_exists:
+            # Obtener información adicional del datanode desde el CSV
+            datanode_info = get_datanode_info(assigned_datanode, available_datanodes)
+
+            # Crear el nuevo datanode en el inventario
+            new_node = {
+                "address": assigned_datanode,
+                "status": datanode_info['status'],
+                "uptime": datanode_info['uptime'],
+                "total_space": datanode_info['total_space'],
+                "available_space": datanode_info['available_space'],
+                "files": {
+                    file_name: {"blocks": [{"name": block_name, "url": block_url}]}
+                }
+            }
+
+            inventory['datanodes'].append(new_node)
+
+    # Guardar el inventario actualizado en el archivo JSON
+    with open(inventory_path, "w") as inventory_file:
+        json.dump(inventory, inventory_file, indent=4)
+
+
+
+# Método HELPER para obtener información adicional del datanode desde el CSV
+def get_datanode_info(assigned_datanode, available_datanodes):
+    for node in available_datanodes:
+        if node['address'] == assigned_datanode:
+            return {
+                'status': node['status'],
+                'uptime': node['uptime'],
+                'total_space': node['total_space'],
+                'available_space': node['available_space']
+            }
+
+    # Si no se encuentra la información, devolver un diccionario vacío
+    return {}
+
+
+# Método HELPER para obtener datanodes disponibles desde el archivo CSV de registered datanodes
 def get_available_datanodes_from_csv():
     available_datanodes = []
     with open(registered_datanodes_file, mode='r', newline='') as file:
@@ -240,6 +338,8 @@ def get_available_datanodes_from_csv():
             if row['status'] == 'True':
                 available_datanodes.append({
                     'address': row['address'],
+                    'status': row['status'],
+                    'uptime': row['uptime'],
                     'total_space': int(row['total_space']),
                     'available_space': float(row['available_space']),
                     'grpc_dir': row['grpc_dir']
@@ -280,7 +380,9 @@ def allocate_blocks():
                 'grpc_dir': datanode['grpc_dir'],
                 'assigned_datanode': datanode['address']
             })
-
+    # Llamar al método addToInventory para actualizar el inventario
+    addToInventory(file_name, block_assignments, available_datanodes)
+    updateCatalog(file_name)
     return jsonify(block_assignments), 200
 
 # devuelve datanodes que estan disponibles

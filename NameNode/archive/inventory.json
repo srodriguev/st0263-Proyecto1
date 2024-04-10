@@ -1,3 +1,222 @@
 {
-    "datanodes": []
+    "datanodes": [
+        {
+            "address": "127.0.0.1:6000",
+            "status": "offline",
+            "uptime": "0.00022411346435546875",
+            "total_space": "50000000",
+            "available_space": 49967232.0,
+            "files": {
+                "file1.txt": {
+                    "blocks": [
+                        {
+                            "name": "block1",
+                            "url": "http://127.0.0.1:6000/files/file1.txt/block1"
+                        },
+                        {
+                            "name": "block2",
+                            "url": "http://127.0.0.1:6000/files/file1.txt/block2"
+                        },
+                        {
+                            "name": "block3",
+                            "url": "http://127.0.0.1:6000/files/file1.txt/block3"
+                        },
+                        {
+                            "name": "block4",
+                            "url": "http://127.0.0.1:6000/files/file1.txt/block4"
+                        },
+                        {
+                            "name": "block5",
+                            "url": "http://127.0.0.1:6000/files/file1.txt/block5"
+                        },
+                        {
+                            "name": "block6",
+                            "url": "http://127.0.0.1:6000/files/file1.txt/block6"
+                        },
+                        {
+                            "name": "block7",
+                            "url": "http://127.0.0.1:6000/files/file1.txt/block7"
+                        },
+                        {
+                            "name": "block8",
+                            "url": "http://127.0.0.1:6000/files/file1.txt/block8"
+                        },
+                        {
+                            "name": "block1",
+                            "url": "http://127.0.0.1:6000/files/file1.txt/block1"
+                        },
+                        {
+                            "name": "block2",
+                            "url": "http://127.0.0.1:6000/files/file1.txt/block2"
+                        },
+                        {
+                            "name": "block3",
+                            "url": "http://127.0.0.1:6000/files/file1.txt/block3"
+                        },
+                        {
+                            "name": "block4",
+                            "url": "http://127.0.0.1:6000/files/file1.txt/block4"
+                        },
+                        {
+                            "name": "block5",
+                            "url": "http://127.0.0.1:6000/files/file1.txt/block5"
+                        },
+                        {
+                            "name": "block6",
+                            "url": "http://127.0.0.1:6000/files/file1.txt/block6"
+                        },
+                        {
+                            "name": "block7",
+                            "url": "http://127.0.0.1:6000/files/file1.txt/block7"
+                        },
+                        {
+                            "name": "block8",
+                            "url": "http://127.0.0.1:6000/files/file1.txt/block8"
+                        },
+                        {
+                            "name": "block1",
+                            "url": "http://127.0.0.1:6000/files/file1.txt/block1"
+                        },
+                        {
+                            "name": "block2",
+                            "url": "http://127.0.0.1:6000/files/file1.txt/block2"
+                        },
+                        {
+                            "name": "block3",
+                            "url": "http://127.0.0.1:6000/files/file1.txt/block3"
+                        },
+                        {
+                            "name": "block4",
+                            "url": "http://127.0.0.1:6000/files/file1.txt/block4"
+                        },
+                        {
+                            "name": "block5",
+                            "url": "http://127.0.0.1:6000/files/file1.txt/block5"
+                        },
+                        {
+                            "name": "block6",
+                            "url": "http://127.0.0.1:6000/files/file1.txt/block6"
+                        },
+                        {
+                            "name": "block7",
+                            "url": "http://127.0.0.1:6000/files/file1.txt/block7"
+                        },
+                        {
+                            "name": "block8",
+                            "url": "http://127.0.0.1:6000/files/file1.txt/block8"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "address": "127.0.0.1:6001",
+            "status": "True",
+            "uptime": "0.00019407272338867188",
+            "total_space": "50000000",
+            "available_space": 49967232.0,
+            "files": {
+                "file1.txt": {
+                    "blocks": [
+                        {
+                            "name": "block1",
+                            "url": "http://127.0.0.1:6001/files/file1.txt/block1"
+                        },
+                        {
+                            "name": "block2",
+                            "url": "http://127.0.0.1:6001/files/file1.txt/block2"
+                        },
+                        {
+                            "name": "block3",
+                            "url": "http://127.0.0.1:6001/files/file1.txt/block3"
+                        },
+                        {
+                            "name": "block4",
+                            "url": "http://127.0.0.1:6001/files/file1.txt/block4"
+                        },
+                        {
+                            "name": "block5",
+                            "url": "http://127.0.0.1:6001/files/file1.txt/block5"
+                        },
+                        {
+                            "name": "block6",
+                            "url": "http://127.0.0.1:6001/files/file1.txt/block6"
+                        },
+                        {
+                            "name": "block7",
+                            "url": "http://127.0.0.1:6001/files/file1.txt/block7"
+                        },
+                        {
+                            "name": "block8",
+                            "url": "http://127.0.0.1:6001/files/file1.txt/block8"
+                        },
+                        {
+                            "name": "block1",
+                            "url": "http://127.0.0.1:6001/files/file1.txt/block1"
+                        },
+                        {
+                            "name": "block2",
+                            "url": "http://127.0.0.1:6001/files/file1.txt/block2"
+                        },
+                        {
+                            "name": "block3",
+                            "url": "http://127.0.0.1:6001/files/file1.txt/block3"
+                        },
+                        {
+                            "name": "block4",
+                            "url": "http://127.0.0.1:6001/files/file1.txt/block4"
+                        },
+                        {
+                            "name": "block5",
+                            "url": "http://127.0.0.1:6001/files/file1.txt/block5"
+                        },
+                        {
+                            "name": "block6",
+                            "url": "http://127.0.0.1:6001/files/file1.txt/block6"
+                        },
+                        {
+                            "name": "block7",
+                            "url": "http://127.0.0.1:6001/files/file1.txt/block7"
+                        },
+                        {
+                            "name": "block8",
+                            "url": "http://127.0.0.1:6001/files/file1.txt/block8"
+                        },
+                        {
+                            "name": "block1",
+                            "url": "http://127.0.0.1:6001/files/file1.txt/block1"
+                        },
+                        {
+                            "name": "block2",
+                            "url": "http://127.0.0.1:6001/files/file1.txt/block2"
+                        },
+                        {
+                            "name": "block3",
+                            "url": "http://127.0.0.1:6001/files/file1.txt/block3"
+                        },
+                        {
+                            "name": "block4",
+                            "url": "http://127.0.0.1:6001/files/file1.txt/block4"
+                        },
+                        {
+                            "name": "block5",
+                            "url": "http://127.0.0.1:6001/files/file1.txt/block5"
+                        },
+                        {
+                            "name": "block6",
+                            "url": "http://127.0.0.1:6001/files/file1.txt/block6"
+                        },
+                        {
+                            "name": "block7",
+                            "url": "http://127.0.0.1:6001/files/file1.txt/block7"
+                        },
+                        {
+                            "name": "block8",
+                            "url": "http://127.0.0.1:6001/files/file1.txt/block8"
+                        }
+                    ]
+                }
+            }
+        }
+    ]
 }
