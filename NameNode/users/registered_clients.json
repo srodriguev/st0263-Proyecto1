@@ -1,5 +1,5 @@
 {
-    "127.0.0.1/5500": [
+    "127.0.0.1:5500": [
         [
             "admin",
             "$2b$12$hj30BSqVFb1/c8ox/N/Eh.B1.stak1VqniSsuEaW4o6mc.59tjZTa"

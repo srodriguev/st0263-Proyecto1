@@ -62,13 +62,18 @@ def split_file_into_blocks(input_file, output_directory):
 #combina los bloques en 1 archivo.
 def merge_blocks_into_file(blocks_directory, output_file):
     print("Time to put back together the chunks")
-    with open(output_file, 'wb') as output:
-        block_number = 0
+    print(f"Blocks directory: {blocks_directory}")
+    print(f"Output file: {output_file}")
+    with open(output_file, 'w') as output:
+        block_number = 1
         while True:
-            block_filename = os.path.join(blocks_directory, f"block_{block_number}")
+            block_filename = os.path.join(blocks_directory, f"block{block_number}")
+            print(f"Blocks filename: {block_filename}")
             if not os.path.exists(block_filename):
+                print(f"couldnt join block: {block_filename}")
                 break
-            with open(block_filename, 'rb') as block_file:
+            with open(block_filename, 'r') as block_file:
+                print(f"reading {block_filename}")
                 block_data = block_file.read()
                 output.write(block_data)
             block_number += 1
@@ -129,9 +134,40 @@ def request_file(file_name):
         data = response.json()
         print("Bloques del archivo solicitado:")
         for block in data:
-            print(f"Nombre del bloque: {block['block_name']}, URL del bloque: {block['block_url']}")
+            print(f"Nombre del bloque: {block['block_name']}, URL del bloque: {block['block_url']}, dir grpc: {block['grpc_dir']}")
+        return data
     else:
         print("Error al obtener los bloques del archivo:", response.text)
+        return None
+
+# Recibimos la solicitud de descarga del menú y llamamos los subprocesos
+def download_request(file_name):
+    print("Gestionando la descarga...")
+    file_info = request_file(file_name)
+    if file_info is not None:
+        downloaded_blocks = set()  # Conjunto para almacenar los bloques descargados
+        downloads_directory = f"./downloaded_blocks/{file_name}"  # Directorio para almacenar los bloques descargados
+        os.makedirs(downloads_directory, exist_ok=True)  # Crear directorio si no existe
+        for block in file_info:
+            block_name = block['block_name']
+            block_url = block['block_url']
+            grpc_dir = block['grpc_dir']
+            block_filename = os.path.join(downloads_directory, f"{block_name}")
+            if block_name not in downloaded_blocks:  # Verificar si el bloque no ha sido descargado
+                # Descargar el bloque utilizando DownloadBlock y guardar en el directorio de descargas
+                download_response = DownloadBlock(file_name, block_name, grpc_dir)
+                # print(f"response for block: {download_response}")
+                #downloaded_blocks.add(response)  # Agregar el bloque al conjunto de bloques descargados
+                with open(block_filename, 'w') as block_file:
+                    block_file.write(download_response)
+                downloaded_blocks.add(block_name)  # Agregar el bloque al conjunto de bloques descargados
+                
+            else:
+                print(f"El bloque {block_name} ya ha sido descargado previamente")
+        merge_blocks_into_file( f"{downloads_directory}", f"./downloaded_files/{file_name}")  # Combinar bloques en un solo archivo
+    else:
+        print("No se pudo obtener la información del archivo")
+
 
 
 # METODOS DE ESCRITURA DE ARCHIVOS
@@ -237,15 +273,20 @@ def DownloadBlock(file_name, block_name, datanode_rpc_url):
         
         # Crea una solicitud de descarga de un bloque de archivo
         request = dfs_pb2.DownloadBlockRequest(file_name=file_name, block_name=block_name)
+        print("Download request created in client.")
         
         # Envía la solicitud al servidor gRPC
         response = stub.DownloadBlock(request)
+        print("Sent download request to server")
         
         # Maneja la respuesta del servidor
         if response.block_data:
-            print("Downloaded data:", response.block_data)
+            #print("Downloaded data:", response.block_data)
+            print("Download was successful")
+            return response.block_data
         else:
             print("Download failed.")
+            return None
 
 
 
@@ -280,9 +321,7 @@ def main_menu():
             request_catalog()
         elif choice_menu == '2':
             file_name = input("Ingresa el nombre del archivo que deseas descargar: ")
-            data = request_file(file_name)
-            for block in data:
-                DownloadBlock(file_name, block['block_name'])
+            download_request(file_name)
         elif choice_menu == '3':
             input_file = input("Ingresa el nombre del archivo: ")
             num_blocks = split_file_into_blocks(input_file, block_output)

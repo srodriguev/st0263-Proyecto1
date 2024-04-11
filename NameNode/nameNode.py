@@ -13,6 +13,10 @@ import argparse
 
 import socket
 
+import grpc
+import dfs_pb2
+import dfs_pb2_grpc
+
 app = Flask(__name__)
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
@@ -211,18 +215,19 @@ def get_file_blocks():
 
     # Buscar el archivo solicitado en el inventario
     file_blocks = None
+    grpc_dir = None
     for datanode in inventory_data['datanodes']:
         if 'files' in datanode:
             if file_requested in datanode['files']:
                 file_blocks = datanode['files'][file_requested]['blocks']
+                grpc_dir = datanode['grpc_dir']  # Obtenemos la dirección gRPC del datanode
                 break
-
     # Verificar si el archivo solicitado está en el inventario
     if file_blocks is None:
         return jsonify({'error': f'El archivo {file_requested} no está en el inventario'}), 404
 
     # Construir la respuesta con la lista de bloques y sus URL
-    result = [{'block_name': block['name'], 'block_url': block['url']} for block in file_blocks]
+    result = [{'block_name': block['name'], 'block_url': block['url'], 'grpc_dir': grpc_dir} for block in file_blocks]
 
     return jsonify(result), 200
 
@@ -295,6 +300,7 @@ def addToInventory(file_name, block_assignments, available_datanodes):
             # Crear el nuevo datanode en el inventario
             new_node = {
                 "address": assigned_datanode,
+                "grpc_dir": grpc_dir,
                 "status": datanode_info['status'],
                 "uptime": datanode_info['uptime'],
                 "total_space": datanode_info['total_space'],
@@ -396,7 +402,7 @@ def get_available_datanodes(inventory_data):
     return available_datanodes
 
 #realocar los bloques que tiene un datanode caido
-def reallocate_blocks(address):
+def reallocate_blocks1(address):
     # Leer el archivo inventory.json
     inventory_path = os.path.join(archive_url, 'inventory.json')
 
@@ -465,7 +471,78 @@ def reallocate_blocks(address):
 
     print("Reasignación de bloques completada.")
 
+def reallocate_blocks2(address):
+    print("Vamos a realocar bloques: ")
+    # Leer el archivo inventory.json
+    inventory_path = os.path.join(archive_url, 'inventory.json')
 
+    if not os.path.exists(inventory_path):
+        print("El archivo inventory.json no existe.")
+        return
+
+    with open(inventory_path, 'r') as inventory_file:
+        inventory_data = json.load(inventory_file)
+
+    print("Buscar el datanode caido ")
+    # Buscar el DataNode caído
+    failed_datanode = None
+    for datanode in inventory_data['datanodes']:
+        if datanode['address'] == address:
+            failed_datanode = datanode
+            break
+
+    if failed_datanode is None:
+        print(f"No se encontró ningún DataNode con la dirección {address} en el inventario.")
+        return
+
+    print("Relocalizar bloques")
+    # Realizar la realocación de bloques
+    for file_data in failed_datanode.get('files', []):
+        file_name = file_data['name']
+        blocks_to_reallocate = []
+        for block in file_data.get('blocks', []):
+            block_name = block['name']
+            # Encontrar otros DataNodes que también almacenan una copia del mismo bloque y que estén disponibles
+            target_datanodes = []
+            for datanode in inventory_data['datanodes']:
+                if datanode != failed_datanode:
+                    for other_file_data in datanode.get('files', []):
+                        if other_file_data['name'] == file_name:
+                            for other_block in other_file_data.get('blocks', []):
+                                if other_block['name'] == block_name:
+                                    target_datanodes.append((datanode, other_block))
+                                    break
+                            break
+
+            if not target_datanodes:
+                print(f"No se encontró un DataNode disponible para realojar el bloque {block_name} del archivo {file_name}.")
+                continue
+
+            # Imprimir la información sobre los bloques a realojar
+            print(f"Bloque {block_name} del archivo {file_name} está almacenado en el DataNode {address}.")
+            print("DataNodes disponibles para realojar el bloque:")
+            for datanode, _ in target_datanodes:
+                print(f"  - DataNode {datanode['address']}")
+
+            # Descargar el bloque del DataNode que aún está en línea
+            download_response = DownloadBlock(file_name, block_name, failed_datanode['grpc_dir'])
+
+            # Subir el bloque al primer DataNode disponible
+            target_datanode, _ = target_datanodes[0]
+            UploadBlock(file_name, block_name, target_datanode['address'], download_response)
+
+            # Actualizar el inventario para reflejar la realocación del bloque
+            for other_file_data, other_block in target_datanodes:
+                other_file_data['blocks'].append({'name': block_name, 'url': f"http://{target_datanode['address']}/files/{file_name}/{block_name}"})
+
+    # Guardar los cambios en el archivo inventory.json
+    with open(inventory_path, 'w') as inventory_file:
+        json.dump(inventory_data, inventory_file, indent=2)
+
+    print("Reasignación de bloques completada.")
+
+def reallocate_blocks(address):
+    print("Reallocation of blocks is a wip, stay tuned!")
 
 # --- FUNCIONES DEL LADO DEL DATANODE
 
@@ -549,7 +626,7 @@ def check_datanode_health():
                             'available_capacity': data['available_capacity']
                         }
 
-                        print("update space definition in inventory: ")
+                        #print("update space definition in inventory: ")
                         inventory_file_path = os.path.join(archive_url, 'inventory.json')
                         update_inventory_capacity(address, data['available_capacity'], data['capacity'], inventory_file_path)
 
@@ -668,7 +745,7 @@ def check_leader_nn_status():
             failback_counter = 0  # Reiniciar contador después del failover
             #time.sleep(fail_threshold)  # Esperar antes de volver a intentar?
 
-        time.sleep(10)  # Esperar x tiempo antes de enviar el próximo ping
+        time.sleep(5)  # Esperar x tiempo antes de enviar el próximo ping
 
 # metodo de failover, en proceso!!!
 def do_failover():
@@ -680,6 +757,8 @@ def do_failover():
             #print("registered peers: ", registered_peers_file)
             clients_data = json.load(file)
             for ip, _ in clients_data.items():
+                print(f"---{clients_data}")
+                print(f"---{clients_data.items}")
                 client_url = f"http://{ip}/changenamenode"
                 print(client_url)
                 success = change_namenode(client_url, my_dir)
@@ -697,7 +776,8 @@ def do_failover():
             reader = csv.DictReader(file)
             for row in reader:
                 ip = row["address"].split(":")[0]
-                url = f"http://{ip}/changenamenode"
+                dn_dir = row["address"]
+                url = f"http://{dn_dir}/changenamenode"
                 success = change_namenode(url, my_dir)
                 failover_results["registered_datanodes"][ip] = success
     except FileNotFoundError:
@@ -1025,6 +1105,67 @@ def updateAllfiles():
     except Exception as e:
         print("Error al actualizar el archivo de clientes registrados:", e)
 
+# --- METODOS GRPC, MINI CLIENTE PARA ENVIAR SOLICITUDES AL DATANODE DE REALOCAR VAINAS CUANDO OTRO DATANODE SE CAE
+
+# --- METODOS DE GPRC
+
+def UploadBlock(file_name, block_name, datanode_server_url):
+    # Crea un canal gRPC para la comunicación con el servidor
+    with grpc.insecure_channel(datanode_server_url) as channel:
+        # Crea un cliente para el servicio gRPC
+        stub = dfs_pb2_grpc.IOFileServicerStub(channel)
+        
+        # Construye la ruta del bloque
+        block_path = os.path.join(block_output, file_name, block_name)
+        print(f"block path: {block_path}")
+        
+        # Verifica si el bloque existe
+        if not os.path.exists(block_path):
+            print(f"Block not found.Adress searched for: {block_path}")
+            return
+        
+        # Lee los datos del bloque
+        with open(block_path, "rb") as file:
+            block_data = file.read()
+        
+        # Crea una solicitud para cargar un nuevo bloque de archivo
+        print("Creating the grpc request...")
+        request = dfs_pb2.UploadBlockRequest(file_name=file_name, block_name=block_name, block_data=block_data)
+        
+        print("Assigning response from server...")
+        # Envía la solicitud al servidor gRPC
+        response = stub.UploadBlock(request)
+        
+        print("Manage response success or failure...")
+        # Maneja la respuesta del servidor
+        if response.success:
+            print("Upload successful.")
+        else:
+            print("Upload failed.")
+
+def DownloadBlock(file_name, block_name, datanode_rpc_url):
+    # Crea un canal gRPC para la comunicación con el servidor
+    with grpc.insecure_channel(datanode_rpc_url) as channel:
+        # Crea un cliente para el servicio gRPC
+        stub = dfs_pb2_grpc.IOFileServicerStub(channel)
+        
+        # Crea una solicitud de descarga de un bloque de archivo
+        request = dfs_pb2.DownloadBlockRequest(file_name=file_name, block_name=block_name)
+        print("Download request created in client.")
+        
+        # Envía la solicitud al servidor gRPC
+        response = stub.DownloadBlock(request)
+        print("Sent download request to server")
+        
+        # Maneja la respuesta del servidor
+        if response.block_data:
+            #print("Downloaded data:", response.block_data)
+            print("Download was successful")
+            return response.block_data
+        else:
+            print("Download failed.")
+            return None
+        
 
 # --- MAIN LOOP
 # IS LEADER = BOOLEANO SI ES UN NAMENODE LIDER O FOLLOWER
