@@ -145,11 +145,11 @@ Podria ser mas eficiente, si, pero por ahora esta asi.
 Para correr el codigo en orden, por ejemplo
 
 ```python
-python3 namenode.py
-python3 namenode.py --host 127.0.0.1 --port 5001 --is_leader False
-python3 datanode.py
-python3 datanode.py --host 127.0.0.1 --port 6001 --grpc_port 50052
-python3 datanode.py --host 127.0.0.1 --port 6002 --grpc_port 50053
+python3 nameNode.py
+python3 nameNode.py --host 127.0.0.1 --port 5001 --is_leader False
+python3 dataNode.py
+python3 dataNode.py --host 127.0.0.1 --port 6001 --grpc_port 50052
+python3 dataNode.py --host 127.0.0.1 --port 6002 --grpc_port 50053
 python3 client.py 
 python3 client.py --host 127.0.0.1 --port 5501
 ```
