@@ -8,3 +8,6 @@ sudo yum upgrade -y
 
 # Install python3-pip
 sudo yum install python3-pip -y
+
+# Install git
+sudo yum install git -y
