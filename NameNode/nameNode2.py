@@ -10,6 +10,7 @@ import time
 import os
 import threading
 import argparse
+import random
 
 import socket
 
@@ -353,9 +354,75 @@ def get_available_datanodes_from_csv():
                 })
     return available_datanodes
 
-# Método para asignar bloques
+
+
+# Método para asignar bloques utilizando Weighted Round Robin
 @app.route('/allocateblocks', methods=['POST'])
 def allocate_blocks():
+    data = request.get_json()
+
+    # Extraer la información del JSON recibido
+    file_name = data.get('file_name')
+    num_blocks = data.get('num_blocks')
+
+    # Obtener los datanodes disponibles desde el archivo CSV
+    available_datanodes = get_available_datanodes_from_csv()
+
+    # Verificar si hay suficientes datanodes disponibles
+    if len(available_datanodes) < 1:
+        return jsonify({'error': 'No hay suficientes datanodes disponibles para almacenar todos los bloques'}), 400
+
+    # Calcular los pesos de cada datanode en función de su capacidad de almacenamiento disponible
+    total_available_space = sum(datanode['available_space'] for datanode in available_datanodes)
+    weights = [datanode['available_space'] / total_available_space for datanode in available_datanodes]
+
+    # Lista para almacenar las asignaciones de bloques
+    block_assignments = []
+
+    # Iterar sobre cada bloque que debe ser almacenado
+    for i in range(1, num_blocks + 1):
+        block_name = f"block{i}"
+        
+        # Utilizar los pesos para determinar a qué datanode asignar el bloque
+        datanode_index = weighted_round_robin(weights)
+        datanode = available_datanodes[datanode_index]
+
+        block_url = f"http://{datanode['address']}/files/{file_name}/{block_name}"
+        block_assignments.append({
+            'block_name': block_name,
+            'block_url': block_url,
+            'flask_dir': datanode['address'],
+            'grpc_dir': datanode['grpc_dir'],
+            'assigned_datanode': datanode['address']
+        })
+
+    # Llamar al método addToInventory para actualizar el inventario
+    addToInventory(file_name, block_assignments, available_datanodes)
+    updateCatalog(file_name)
+    return jsonify(block_assignments), 200
+
+# Función para Weighted Round Robin
+def weighted_round_robin(weights):
+    # Generar un número aleatorio entre 0 y 1
+    random_number = random.random()
+
+    # Inicializar la suma acumulativa de los pesos
+    cumulative_sum = 0
+
+    # Iterar sobre los pesos y encontrar el índice correspondiente
+    for i, weight in enumerate(weights):
+        cumulative_sum += weight
+        if random_number <= cumulative_sum:
+            return i
+
+    # Si no se selecciona ningún índice, devolver el último índice
+    return len(weights) - 1
+
+
+
+# Método para asignar bloques con round robin basico
+@app.route('/allocateblocks1', methods=['POST'])
+def allocate_blocks1():
     data = request.get_json()
 
     # Extraer la información del JSON recibido
@@ -733,25 +800,37 @@ def register_nn_follower():
 def check_leader_nn_status():
     print("Check si mi lider sigue con vida!")
     failback_counter = 0
+    global doing_failover
     while True:
         if ping_leader(leader_ip, leader_port):
-            print('Ping al líder exitoso')
-            failback_counter = 0
-            updateAllfiles()
+            if not doing_failover:
+                # es un ping normal, promedio
+                print('Ping al líder exitoso')
+                failback_counter = 0
+                updateAllfiles()
+            else:
+                # es un ping post-failover, indica inicio de failback
+                print("Se inicia el failback, el lider volvió")
+                do_failback()
+                doing_failover = False
         else:
             print('Ping al líder fallido')
             failback_counter += 1
 
         if failback_counter >= fail_threshold:
             print('Cumplimos las condiciones para comenzar el failover...')
-            do_failover()
+            # Suponemos que si es la primera vez que falla doing failover estaba en false, para que no se quede en un ciclo infinito
+            # asi que iniciamos failover si doing_failover = False
+            if not doing_failover:
+                do_failover()
             failback_counter = 0  # Reiniciar contador después del failover
             #time.sleep(fail_threshold)  # Esperar antes de volver a intentar?
+            doing_failover = True
 
         time.sleep(5)  # Esperar x tiempo antes de enviar el próximo ping
 
 # metodo de failover, en proceso!!!
-def do_failover():
+def do_failover11():
     failover_results = {"registered_clients": {}, "registered_datanodes": {}}
     #print("Iniciamos failover...")
     # Paso 1: Cambiar el NameNode en los clientes registrados
@@ -780,7 +859,7 @@ def do_failover():
             for row in reader:
                 ip = row["address"].split(":")[0]
                 dn_dir = row["address"]
-                url = f"http://{dn_dir}/changenamenode"
+                url = f"http://{dn_dir}/change_namenode"
                 success = change_namenode(url, my_dir)
                 failover_results["registered_datanodes"][ip] = success
     except FileNotFoundError:
@@ -794,6 +873,112 @@ def do_failover():
             json.dump(failover_results, file, indent=2)
     except Exception as e:
         print(f"Error al guardar los resultados del failover en el archivo de registros: {e}")
+
+# metodo de failover
+def do_failover():
+    failover_results = {"registered_clients": {}, "registered_datanodes": {}}
+    # Paso 1: Cambiar el NameNode en los clientes registrados
+    try:
+        with open(registered_peers_file, 'r') as file:
+            clients_data = json.load(file)
+            for ip, _ in clients_data.items():
+                print(f"---{clients_data}")
+                print(f"---{clients_data.items}")
+                client_url = f"http://{ip}/change_namenode"
+                try:
+                    success = change_namenode(client_url, my_dir)
+                    failover_results["registered_clients"][ip] = success
+                except Exception as e:
+                    print(f"Error al cambiar el NameNode en el cliente {ip}: {e}")
+                    # Intentar una vez más
+                    try:
+                        success = change_namenode(client_url, my_dir)
+                        failover_results["registered_clients"][ip] = success
+                    except Exception as e:
+                        print(f"Error al cambiar el NameNode en el cliente {ip} después del segundo intento: {e}")
+    except FileNotFoundError:
+        print("Error: No se encontró el archivo de clientes registrados.")
+    except json.JSONDecodeError:
+        print("Error: No se pudo decodificar el archivo JSON de clientes registrados.")
+    except Exception as e:
+        print(f"Error inesperado al procesar el archivo de clientes registrados: {e}")
+
+    # Paso 2: Cambiar el NameNode en los DataNodes registrados
+    try:
+        with open(registered_datanodes_file, 'r') as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                ip = row["address"].split(":")[0]
+                dn_dir = row["address"]
+                url = f"http://{dn_dir}/change_namenode"
+                try:
+                    success = change_namenode(url, my_dir)
+                    failover_results["registered_datanodes"][ip] = success
+                except Exception as e:
+                    print(f"Error al cambiar el NameNode en el DataNode {ip}: {e}")
+                    # Intentar una vez más
+                    try:
+                        success = change_namenode(url, my_dir)
+                        failover_results["registered_datanodes"][ip] = success
+                    except Exception as e:
+                        print(f"Error al cambiar el NameNode en el DataNode {ip} después del segundo intento: {e}")
+    except FileNotFoundError:
+        print("Error: No se encontró el archivo de DataNodes registrados.")
+    except Exception as e:
+        print(f"Error inesperado al procesar el archivo de DataNodes registrados: {e}")
+
+    # Paso 3: Guardar los resultados del failover
+    try:
+        with open(fail_logs, 'w') as file:
+            json.dump(failover_results, file, indent=2)
+    except Exception as e:
+        print(f"Error al guardar los resultados del failover en el archivo de registros: {e}")
+
+# metodo de failback, wip
+def do_failback():
+    failback_results = {"registered_clients": {}, "registered_datanodes": {}}
+
+    # Paso 1: Cambiar el NameNode en los clientes registrados
+    try:
+        with open(registered_peers_file, 'r') as file:
+            clients_data = json.load(file)
+            for ip, _ in clients_data.items():
+                client_url = f"http://{ip}/changenamenode"
+                success = change_namenode(client_url, original_leader_ip)  # Revertir al líder original
+                failback_results["registered_clients"][ip] = success
+    except FileNotFoundError:
+        print("Error: No se encontró el archivo de clientes registrados.")
+    except json.JSONDecodeError:
+        print("Error: No se pudo decodificar el archivo JSON de clientes registrados.")
+    except Exception as e:
+        print(f"Error inesperado al procesar el archivo de clientes registrados: {e}")
+
+    # Paso 2: Cambiar el NameNode en los DataNodes registrados
+    try:
+        with open(registered_datanodes_file, 'r') as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                ip = row["address"].split(":")[0]
+                dn_dir = row["address"]
+                url = f"http://{dn_dir}/changenamenode"
+                success = change_namenode(url, original_leader_ip)  # Revertir al líder original
+                failback_results["registered_datanodes"][ip] = success
+    except FileNotFoundError:
+        print("Error: No se encontró el archivo de DataNodes registrados.")
+    except Exception as e:
+        print(f"Error inesperado al procesar el archivo de DataNodes registrados: {e}")
+
+    # Paso 3: Guardar los resultados del failback
+    try:
+        with open(failback_logs, 'w') as file:
+            json.dump(failback_results, file, indent=2)
+    except Exception as e:
+        print(f"Error al guardar los resultados del failback en el archivo de registros: {e}")
+
+    # Paso 4: Actualizar el estado del NameNode a líder original
+    global is_leader
+    is_leader = True
+
 
 def change_namenode(url, my_dir):
     try:
@@ -1213,6 +1398,7 @@ if __name__ == '__main__':
     timer_healthResponse = float(config['NameNode']['timer_healthResponse'])
     timer_healthRequest = float(config['NameNode']['timer_healthRequest'])
     fail_threshold = float(config['NameNode']['fail_threshold'])
+    doing_failover = False
 
     app.start_time = time.time()
 

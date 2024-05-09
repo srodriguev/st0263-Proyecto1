@@ -1,8 +1,9 @@
 {
     "files": [
         {
-            "name": "file1.txt",
+            "name": "example.txt",
             "available": true
         }
+
     ]
 }

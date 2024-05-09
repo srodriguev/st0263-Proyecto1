@@ -3,6 +3,22 @@
         {
             "name": "file1.txt",
             "available": true
+        },
+        {
+            "name": "example.txt",
+            "available": true
+        },
+        {
+            "name": "LoremIpsum.txt",
+            "available": true
+        },
+        {
+            "name": "loko1.txt",
+            "available": true
+        },
+        {
+            "name": "miaus.txt",
+            "available": true
         }
     ]
 }

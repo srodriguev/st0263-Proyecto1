@@ -1,6 +1,6 @@
 {
   "registered_clients": {
-    "127.0.0.1:5500": false
+    "127.0.0.1:5500": true
   },
   "registered_datanodes": {
     "127.0.0.1": false

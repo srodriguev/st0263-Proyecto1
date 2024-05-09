@@ -56,7 +56,7 @@ Proyecto 1 - st0263 - Topicos de telematica
 
 **Client:**
 - mover los helpers a su propio archivo python para que se puedan reutilizar y por orden, corregir errores de importacion (a mi no me estaba dando sobs). 
-- Varias funciones del menu tienen logica incorrecta, se estan corrigiendo.
+- Varias funciones del menu tienen logica incorrecta, se estan corrigiendo. -> Corregido
 
 **DataNode:**
 - Deberia guardar el hash de cada bloque en algun lado para luego compararlo al enviar el reporte de stock y ver si algun archivo se ha perdido, dañado o corrompido.
@@ -145,11 +145,11 @@ Podria ser mas eficiente, si, pero por ahora esta asi.
 Para correr el codigo en orden, por ejemplo
 
 ```python
-python3 nameNode.py
-python3 nameNode.py --host 127.0.0.1 --port 5001 --is_leader False
-python3 dataNode.py
-python3 dataNode.py --host 127.0.0.1 --port 6001 --grpc_port 50052
-python3 dataNode.py --host 127.0.0.1 --port 6002 --grpc_port 50053
+python3 namenode.py
+python3 namenode.py --host 127.0.0.1 --port 5001 --is_leader False
+python3 datanode.py
+python3 datanode.py --host 127.0.0.1 --port 6001 --grpc_port 50052
+python3 datanode.py --host 127.0.0.1 --port 6002 --grpc_port 50053
 python3 client.py 
 python3 client.py --host 127.0.0.1 --port 5501
 ```

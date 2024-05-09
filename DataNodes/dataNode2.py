@@ -53,6 +53,11 @@ def health_report():
 
 @app.route('/stockReport', methods=['GET'])
 def stock_report():
+
+    # Abrir el archivo de inventario en modo de escritura para borrar su contenido anterior y que no se acumule
+    with open(inventory_path, 'w') as f:
+        f.write('')  # Esto borra el contenido existente
+
     inventory = []
     # Itera sobre los directorios en la carpeta de archivos configurada
     for dirpath, dirnames, filenames in os.walk(files_folder):
@@ -275,3 +280,4 @@ if __name__ == '__main__':
 
     #print("Yo voy a correr en: ",dataNode_dir)
     #app.run(host=host, debug=True, port=int(port))
+
