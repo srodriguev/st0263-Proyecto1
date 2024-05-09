@@ -252,6 +252,7 @@ if __name__ == '__main__':
     # Actualizar los valores si se proporcionan argumentos en la línea de comandos
     if args.host:
         ip = args.host
+        host = args.host
     if args.port:
         port = args.port
     if args.grpc_port:
