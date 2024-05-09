@@ -780,7 +780,7 @@ def do_failover():
             for row in reader:
                 ip = row["address"].split(":")[0]
                 dn_dir = row["address"]
-                url = f"http://{dn_dir}/changenamenode"
+                url = f"http://{dn_dir}/change_namenode"
                 success = change_namenode(url, my_dir)
                 failover_results["registered_datanodes"][ip] = success
     except FileNotFoundError:

@@ -2,3 +2,7 @@ __pycache__/
 **.DS_Store/
 **/DS_Store/
 **/DS_Store
+
+Proyecto1-keys.pem
+aws_debian_config.sh
+aws_fedora_config.sh

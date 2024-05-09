@@ -153,3 +153,52 @@ python3 datanode.py --host 127.0.0.1 --port 6002 --grpc_port 50053
 python3 client.py 
 python3 client.py --host 127.0.0.1 --port 5501
 ```
+
+```
+sudo apt update && sudo apt upgrade &&  sudo apt install python3
+sudo apt install python3-pip
+
+git clone https://github.com/srodriguev/st0263-Proyecto1
+pip install -r requirements.txt
+
+# por si necesita borrar un key 
+ssh-keygen -R ec2-100-27-63-134.compute-1.amazonaws.com
+
+sudo  apt install python3.12-venv
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+
+pip install Flask && pip install grpcio && pip install grpcio-tools && pip install bcrypt
+
+sudo  apt install python3.12-venv && python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt
+
+```
+Por si tiene problemas con ubuntu
+pip install --upgrade Flask Werkzeug
+
+
+```
+python3 nameNode2.py --host 100.27.63.134 --port 5000 --is_leader True
+python3 nameNode2.py --host 18.233.43.223 --port 5001 --is_leader False
+python3 dataNode2.py --host 3.220.100.118 --port 6000 --grpc_port 50051
+python3 datanode2.py --host 23.31.23.168 --port 6000 --grpc_port 50051
+python3 datanode2.py --host 100.28.19.122 --port 6000 --grpc_port 50051
+python3 client.py --host 127.0.0.1 --port 5501
+```
+
+```
+python3 nameNode2.py --host 172.31.36.253 --port 5000 --is_leader True
+
+python3 nameNode2.py --host 172.31.37.164 --port 5000 --is_leader False
+# wildcard para pruebs -> python3 nameNode2.py --host 0.0.0.0 --port 5001 --is_leader False
+
+python3 dataNode2.py --host 172.31.45.139 --port 6000 --grpc_port 50051
+python3 datanode2.py --host 172.31.34.1 --port 6000 --grpc_port 50051
+python3 datanode2.py --host 172.31.36.193 --port 6000 --grpc_port 50051
+
+
+python3 client.py --host 127.0.0.1 --port 5501
+```
+
