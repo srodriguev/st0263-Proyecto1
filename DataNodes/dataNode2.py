@@ -260,8 +260,10 @@ if __name__ == '__main__':
 
     # Direccion en que corro Flask
     dataNode_dir = f"{host}:{port}"
+    print("!- self address: {nameNode_dir}")
     # Direccion de mi NameNode leader
     nameNode_dir = f"{nn_ip}:{nn_port}"
+    print("!- Reporting to NN: {nameNode_dir}")
     # Direccion RPC
     grpc_dir = f"{host}:{grpc_port}"
 
